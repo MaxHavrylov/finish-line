@@ -1,0 +1,6 @@
+{
+  "title": "FinishLine",
+  "subtitle": "Expo + TypeScript + Paper + i18n + SQLite",
+  "body": "Якщо ти бачиш цей екран — локальний проєкт працює.",
+  "dbVersion": "Версія ініціалізації БД: {{version}}"
+}

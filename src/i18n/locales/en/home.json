@@ -1,0 +1,6 @@
+{
+  "title": "FinishLine",
+  "subtitle": "Expo + TypeScript + Paper + i18n + SQLite",
+  "body": "If you see this screen, your local setup works.",
+  "dbVersion": "DB bootstrap version: {{version}}"
+}

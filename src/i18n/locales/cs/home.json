@@ -1,0 +1,6 @@
+{
+  "title": "FinishLine",
+  "subtitle": "Expo + TypeScript + Paper + i18n + SQLite",
+  "body": "Pokud vidíš tuto obrazovku, lokální projekt běží.",
+  "dbVersion": "Verze inicializace DB: {{version}}"
+}

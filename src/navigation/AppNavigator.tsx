@@ -28,7 +28,7 @@ export default function AppNavigator() {
         initialRouteName="DiscoverTab"
         screenOptions={({ route }) => ({
             headerShown: false,
-            tabBarActiveTintColor: "#84cc16",   // lime accent
+            tabBarActiveTintColor: "#4CAF50",   // green accent
             tabBarInactiveTintColor: "#9ca3af", // gray
             tabBarIcon: ({ color, size }) => {
             let icon: keyof typeof Ionicons.glyphMap = "home";
