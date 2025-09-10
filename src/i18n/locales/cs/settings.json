@@ -1,0 +1,36 @@
+{
+  "sections": {
+    "general": "OBECNÁ NASTAVENÍ",
+    "notifications": "UPOZORNĚNÍ",
+    "privacy": "DATA A SOUKROMÍ"
+  },
+  "language": {
+    "title": "Jazyk",
+    "desc": "Jazyk aplikace"
+  },
+  "theme": {
+    "title": "Motiv",
+    "desc": "Systémový, světlý nebo tmavý",
+    "system": "Systém",
+    "light": "Světlý",
+    "dark": "Tmavý"
+  },
+  "notifications": {
+    "reminders": {
+      "title": "Připomínky závodů",
+      "desc": "Upozornění na starty a termíny."
+    },
+    "community": {
+      "title": "Aktuality komunity",
+      "desc": "Novinky od přátel a výzvy."
+    },
+    "comms": {
+      "title": "Komunikační preference",
+      "desc": "Správa emailů a push notifikací."
+    }
+  },
+  "privacy": {
+    "title": "Data a soukromí",
+    "desc": "Správa vašich dat a oprávnění."
+  }
+}

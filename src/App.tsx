@@ -1,18 +1,21 @@
 import React from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { PaperProvider } from "react-native-paper";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { theme } from "./theme";
+import { AppThemeProvider } from "./theme/ThemeProvider";
 import AppNavigator from "./navigation/AppNavigator";
 import "./i18n";
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={theme}>
-        <StatusBar style="auto" />
-        <AppNavigator />
-      </PaperProvider>
+      <AppThemeProvider>
+        {/* SafeAreaView ensures content doesn't go under time/battery bar */}
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+          {/* Keep StatusBar managed by Expo; not translucent to avoid overlap */}
+          <StatusBar style="auto" />
+          <AppNavigator />
+        </SafeAreaView>
+      </AppThemeProvider>
     </SafeAreaProvider>
   );
 }

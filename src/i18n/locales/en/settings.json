@@ -1,0 +1,36 @@
+{
+  "sections": {
+    "general": "GENERAL PREFERENCES",
+    "notifications": "NOTIFICATIONS",
+    "privacy": "DATA & PRIVACY"
+  },
+  "language": {
+    "title": "Language",
+    "desc": "App language"
+  },
+  "theme": {
+    "title": "Theme",
+    "desc": "Follow system, force light, or force dark",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "notifications": {
+    "reminders": {
+      "title": "Event Reminders",
+      "desc": "Upcoming race alerts and deadlines."
+    },
+    "community": {
+      "title": "Community Updates",
+      "desc": "News from friends and challenges."
+    },
+    "comms": {
+      "title": "Communication Preferences",
+      "desc": "Manage email and push notifications."
+    }
+  },
+  "privacy": {
+    "title": "Data & Privacy",
+    "desc": "Control your data and permissions."
+  }
+}
