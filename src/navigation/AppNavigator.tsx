@@ -7,11 +7,11 @@ import {
   DarkTheme as NavDarkTheme,
   Theme as NavTheme
 } from "@react-navigation/native";
-import DiscoverScreen from "@/screens/DiscoverScreen";
-import EventDetailsScreen from "@/screens/EventDetailsScreen";
-import ProfileScreen from "@/screens/ProfileScreen";
-import CommunityScreen from "@/screens/CommunityScreen";
-import SettingsScreen from "@/screens/SettingsScreen";
+import DiscoverScreen from "../screens/DiscoverScreen";
+import EventDetailsScreen from "../screens/EventDetailsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import CommunityScreen from "../screens/CommunityScreen";
+import SettingsScreen from "../screens/SettingsScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme as usePaperTheme } from "react-native-paper";
 
@@ -20,8 +20,17 @@ const Stack = createNativeStackNavigator();
 function DiscoverStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Discover" component={DiscoverScreen} />
-      <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+      {/* 👇 Hide the native header for Discover (removes the gray bar) */}
+      <Stack.Screen
+        name="Discover"
+        component={DiscoverScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EventDetails"
+        component={EventDetailsScreen}
+        options={{ title: "Event Details" }}
+      />
     </Stack.Navigator>
   );
 }
@@ -31,8 +40,6 @@ const Tab = createBottomTabNavigator();
 export default function AppNavigator() {
   const paperTheme = usePaperTheme();
 
-  // Some installations/types augment the Navigation theme to include fonts.
-  // We mirror Paper → Navigation so both libraries stay visually in sync.
   const navTheme: NavTheme = {
     dark: paperTheme.dark,
     colors: {
@@ -44,8 +51,6 @@ export default function AppNavigator() {
       border: paperTheme.colors.outline,
       notification: paperTheme.colors.primary
     },
-    // ✅ add fonts to satisfy augmented/strict Theme typings
-    // (If your NavTheme doesn’t define fonts, this is still harmless.)
     fonts: paperTheme.fonts
   } as unknown as NavTheme;
 
@@ -72,21 +77,9 @@ export default function AppNavigator() {
           component={DiscoverStack}
           options={{ title: "Discover" }}
         />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ title: "My Profile" }}
-        />
-        <Tab.Screen
-          name="Community"
-          component={CommunityScreen}
-          options={{ title: "Friends" }}
-        />
-        <Tab.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{ title: "Settings" }}
-        />
+        <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "My Profile" }} />
+        <Tab.Screen name="Community" component={CommunityScreen} options={{ title: "Friends" }} />
+        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

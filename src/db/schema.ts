@@ -1,9 +1,7 @@
 // SQLite schema and migrations for events + event_distances
-import { getDb } from "@/db";
+import type * as SQLite from "expo-sqlite";
 
-export function runMigrations() {
-  const db = getDb();
-
+export function runMigrations(db: SQLite.SQLiteDatabase) {
   // Migrations table
   db.execSync(`
     CREATE TABLE IF NOT EXISTS _migrations (

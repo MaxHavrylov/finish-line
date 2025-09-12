@@ -1,6 +1,6 @@
-// Minimal expo-sqlite bootstrap + helpers + upsert for events
+// expo-sqlite bootstrap + helpers + upsert for events
 import * as SQLite from "expo-sqlite";
-import { EventDetails, EventSummary, EventDistance } from "@/types/events";
+import { EventDetails, EventSummary, EventDistance } from "../types/events";
 import { runMigrations } from "./schema";
 
 const DB_NAME = "finishline.db";
@@ -24,7 +24,8 @@ function bootstrap(database: SQLite.SQLiteDatabase) {
       value TEXT
     );
   `);
-  runMigrations();
+  // ✅ pass db instance to avoid require cycle
+  runMigrations(database);
   database.runSync(
     "INSERT OR REPLACE INTO app_meta(key, value) VALUES(?, ?)",
     ["db_version", "2"]
@@ -82,7 +83,7 @@ export function upsertEvents(details: EventDetails[]) {
         ]
       );
 
-      // Clear existing distances for the event, then insert current set
+      // Replace distances
       database.runSync("DELETE FROM event_distances WHERE event_id = ?", [e.id]);
       for (const d of e.distances) {
         database.runSync(
@@ -127,7 +128,7 @@ export function listEventSummaries(): EventSummary[] {
   }));
 }
 
-export function getEventDetails(id: string): EventDetails | undefined {
+export function getEventDetails(id: string) {
   const database = getDb();
   const evt = database.getFirstSync<
     (EventSummary & { start_date: string; updated_at: string }) | undefined
