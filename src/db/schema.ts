@@ -1,4 +1,4 @@
-// SQLite schema and migrations for events + event_distances
+// SQLite schema and migrations for events + event_distances + favorites
 import type * as SQLite from "expo-sqlite";
 
 export function runMigrations(db: SQLite.SQLiteDatabase) {
@@ -12,13 +12,19 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
   `);
 
   const apply = (name: string, sql: string) => {
-    const row = db.getFirstSync<{ name: string }>("SELECT name FROM _migrations WHERE name = ?", [name]);
+    const row = db.getFirstSync<{ name: string }>(
+      "SELECT name FROM _migrations WHERE name = ?",
+      [name]
+    );
     if (row) return;
 
     db.execSync("BEGIN");
     try {
       db.execSync(sql);
-      db.runSync("INSERT INTO _migrations(name, run_at) VALUES(?, ?)", [name, new Date().toISOString()]);
+      db.runSync(
+        "INSERT INTO _migrations(name, run_at) VALUES(?, ?)",
+        [name, new Date().toISOString()]
+      );
       db.execSync("COMMIT");
     } catch (e) {
       db.execSync("ROLLBACK");
@@ -62,6 +68,19 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_event_distances_event_id ON event_distances(event_id);
+    `
+  );
+
+  // 002 - favorites
+  apply(
+    "002_favorites",
+    `
+    CREATE TABLE IF NOT EXISTS favorites (
+      event_id TEXT PRIMARY KEY NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_favorites_created_at ON favorites(created_at);
     `
   );
 }

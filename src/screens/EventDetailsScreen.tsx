@@ -1,22 +1,32 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { Card, Text, Button, Divider, Chip, ActivityIndicator } from "react-native-paper";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
+import { Card, Text, Button, Divider, Chip, ActivityIndicator, useTheme } from "react-native-paper";
 import MapView, { Marker } from "react-native-maps";
+import { Ionicons } from "@expo/vector-icons";
 import { EventDetails } from "@/types/events";
 import { getEventById } from "@/repositories/eventsRepo";
+import { isFavorite, toggleFavorite } from "@/repositories/favoritesRepo"; // ⭐ add
 
 export default function EventDetailsScreen({ route }: any) {
+  const theme = useTheme();
   const { event } = route.params as {
     event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
   };
 
   const [details, setDetails] = useState<EventDetails | null>(null);
+  const [fav, setFav] = useState<boolean>(false); // ⭐ state
 
   useEffect(() => {
     (async () => {
       const d = await getEventById(event.id);
       if (d) setDetails(d);
+      setFav(await isFavorite(event.id)); // ⭐ load favorite
     })();
+  }, [event.id]);
+
+  const onToggleFav = useCallback(async () => {
+    const now = await toggleFavorite(event.id);
+    setFav(now);
   }, [event.id]);
 
   const lat = details?.lat ?? 53.7168;
@@ -26,7 +36,19 @@ export default function EventDetailsScreen({ route }: any) {
     <View style={styles.container}>
       <Card style={styles.card}>
         {event.image && <Card.Cover source={{ uri: event.image }} />}
-        <Card.Title title={event.title} subtitle={event.location} />
+        <Card.Title
+          title={event.title}
+          subtitle={event.location}
+          right={() => (
+            <Pressable onPress={onToggleFav} hitSlop={8} style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.7 : 1 }]}>
+              <Ionicons
+                name={fav ? "heart" : "heart-outline"}
+                size={22}
+                color={fav ? theme.colors.error : theme.colors.onSurface}
+              />
+            </Pressable>
+          )}
+        />
         <Card.Content>
           <Text>Date: {new Date(event.date).toLocaleString()}</Text>
           <Text>Category: {event.category}</Text>

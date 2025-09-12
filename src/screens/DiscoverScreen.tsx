@@ -29,6 +29,7 @@ import { EventSummary, EventCategory } from "../types/events";
 import { seedMockIfEmpty, getEvents } from "../repositories/eventsRepo";
 import { syncEvents } from "../sync/eventsSync";
 import { isWithinDays } from "../utils/date";
+import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
 
 // ---- Config / constants
 type DateFilter = "Any" | "30d" | "90d";
@@ -60,13 +61,14 @@ const CATEGORY_COLORS: Partial<Record<EventCategory, string>> = {
   Other: GREEN
 };
 
-// ---- Layout numbers for fixed pill width (2 columns)
+// ---- Layout numbers for stable filter pill widths (2 columns)
 const SCREEN = Dimensions.get("window");
 const H_PADDING = 16; // filtersWrap horizontal padding
 const GAP = 12;       // space between pills
 const COLUMNS = 2;
 const PILL_WIDTH = Math.floor((SCREEN.width - H_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS);
 
+// utils
 const parseDistanceKm = (label?: string): number | undefined => {
   if (!label) return undefined;
   const m = /(\d+(\.\d+)?)/.exec(label.replace(",", "."));
@@ -88,8 +90,9 @@ function FilterPill({
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
-        pressed && { opacity: 0.85 } // no scale to avoid visual jump
+        pressed && { opacity: 0.85 } // no scale → no visual jump
       ]}
+      hitSlop={6}
     >
       <Ionicons
         name={icon}
@@ -97,7 +100,7 @@ function FilterPill({
         color={theme.colors.onSurface}
         style={{ marginRight: 8 }}
       />
-      <Text numberOfLines={1} style={{ opacity: 0.9, textAlign: "center", flexShrink: 1 }}>
+      <Text numberOfLines={1} style={{ opacity: 0.9, flexShrink: 1, textAlign: "center" }}>
         {label}
       </Text>
     </Pressable>
@@ -119,9 +122,11 @@ export default function DiscoverScreen() {
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilter>("Any");
   const [locationText, setLocationText] = useState<string>("");
-
-  // distance (multi-select)
   const [selectedDistances, setSelectedDistances] = useState<DistanceOption[]>([]);
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+
+  // favorites state (persisted ids)
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   // ---- filter modals
   const [typeOpen, setTypeOpen] = useState(false);
@@ -134,26 +139,33 @@ export default function DiscoverScreen() {
     setEvents(data);
   }, []);
 
+  const loadFavorites = useCallback(async () => {
+    const ids = await listFavoriteIds();
+    setFavoriteIds(ids);
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
         await seedMockIfEmpty();
         await load();
+        await loadFavorites();
       } finally {
         setLoading(false);
       }
     })();
-  }, [load]);
+  }, [load, loadFavorites]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await syncEvents();
       await load();
+      await loadFavorites();
     } finally {
       setRefreshing(false);
     }
-  }, [load]);
+  }, [load, loadFavorites]);
 
   // helper for distance matching
   const matchesAnySelectedDistance = (label?: string): boolean => {
@@ -162,36 +174,27 @@ export default function DiscoverScreen() {
     if (d == null) return false;
     return selectedDistances.some((opt) => {
       switch (opt) {
-        case "<=5":
-          return d <= 5;
-        case "5-10":
-          return d >= 5 && d <= 10;
-        case ">10":
-          return d > 10;
+        case "<=5": return d <= 5;
+        case "5-10": return d >= 5 && d <= 10;
+        case ">10": return d > 10;
       }
     });
   };
 
   const filtered = useMemo(() => {
     return events.filter((e) => {
-      // Types (OR within categories)
-      if (selectedCategories.length > 0 && !selectedCategories.includes(e.eventCategory)) {
-        return false;
-      }
+      if (onlyFavorites && !favoriteIds.has(e.id)) return false;               // ⭐ favorites
+      if (selectedCategories.length > 0 && !selectedCategories.includes(e.eventCategory)) return false;
       if (dateFilter === "30d" && !isWithinDays(e.startDate, 30)) return false;
       if (dateFilter === "90d" && !isWithinDays(e.startDate, 90)) return false;
-
       if (locationText.trim()) {
         const hay = `${e.city ?? ""} ${e.country ?? ""}`.toLowerCase();
         if (!hay.includes(locationText.trim().toLowerCase())) return false;
       }
-
-      // distances (multi-select)
       if (!matchesAnySelectedDistance(e.minDistanceLabel)) return false;
-
       return true;
     });
-  }, [events, selectedCategories, dateFilter, locationText, selectedDistances]);
+  }, [events, onlyFavorites, favoriteIds, selectedCategories, dateFilter, locationText, selectedDistances]);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setShowToTop(e.nativeEvent.contentOffset.y > 400);
@@ -206,6 +209,7 @@ export default function DiscoverScreen() {
     setDateFilter("Any");
     setLocationText("");
     setSelectedDistances([]);
+    setOnlyFavorites(false);
   };
 
   const dataWithFilters = useMemo(
@@ -230,20 +234,27 @@ export default function DiscoverScreen() {
   const selectAllDistances = () => setSelectedDistances(DISTANCE_OPTIONS);
   const clearDistances = () => setSelectedDistances([]);
 
+  // card-level favorite toggle
+  const onToggleFav = useCallback(async (eventId: string) => {
+    const nowFav = await toggleFavorite(eventId);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (nowFav) next.add(eventId); else next.delete(eventId);
+      return next;
+    });
+  }, []);
+
   // labels with counts
   const typesLabel =
-    selectedCategories.length > 0
-      ? `Race Types (${selectedCategories.length})`
-      : "Race Types";
-
-  const datesLabel =
-    dateFilter === "Any" ? "Upcoming Dates" : "Upcoming Dates (1)";
-
-  const locationLabel =
-    locationText.trim().length > 0 ? "Location (1)" : "Location";
-
+    selectedCategories.length > 0 ? `Race Types (${selectedCategories.length})` : "Race Types";
+  const datesLabel = dateFilter === "Any" ? "Upcoming Dates" : "Upcoming Dates (1)";
+  const locationLabel = locationText.trim().length > 0 ? "Location (1)" : "Location";
   const distanceLabel =
     selectedDistances.length > 0 ? `Distance (${selectedDistances.length})` : "Distance";
+
+  // ⭐ Favorites label shows the total count of liked events, regardless of toggle
+  const favoritesCount = favoriteIds.size;
+  const favoritesLabel = favoritesCount > 0 ? `Favorites (${favoritesCount})` : "Favorites";
 
   if (loading) {
     return (
@@ -263,38 +274,14 @@ export default function DiscoverScreen() {
           ("__type" in item ? "__filters" : item.id) + "-" + index
         }
         ListHeaderComponent={
-          <View
-            style={[
-              styles.headerWrap,
-              { backgroundColor: theme.colors.background }
-            ]}
-          >
-            <Text variant="headlineSmall" style={styles.headerTitle}>
-              Discover
-            </Text>
+          <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
+            <Text variant="headlineSmall" style={styles.headerTitle}>Discover</Text>
             <View style={styles.headerActions}>
-              <Pressable
-                hitSlop={8}
-                onPress={() => {}}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color={theme.colors.onSurface}
-                  style={{ marginRight: 14 }}
-                />
+              <Pressable hitSlop={8} onPress={() => {}} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <Ionicons name="notifications-outline" size={22} color={theme.colors.onSurface} style={{ marginRight: 14 }} />
               </Pressable>
-              <Pressable
-                hitSlop={8}
-                onPress={() => navigation.navigate("Profile")}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <Ionicons
-                  name="person-circle-outline"
-                  size={26}
-                  color={theme.colors.onSurface}
-                />
+              <Pressable hitSlop={8} onPress={() => navigation.navigate("Profile")} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <Ionicons name="person-circle-outline" size={26} color={theme.colors.onSurface} />
               </Pressable>
             </View>
           </View>
@@ -304,22 +291,37 @@ export default function DiscoverScreen() {
           if ("__type" in item) {
             return (
               <View style={styles.filtersWrap}>
-                <Text variant="titleMedium" style={styles.filtersTitle}>
-                  Filter Events
-                </Text>
+                <Text variant="titleMedium" style={styles.filtersTitle}>Filter Events</Text>
 
                 <View style={styles.filtersGrid}>
                   <FilterPill icon="pulse-outline" label={typesLabel} onPress={() => setTypeOpen(true)} />
                   <FilterPill icon="calendar-outline" label={datesLabel} onPress={() => setDateOpen(true)} />
                   <FilterPill icon="location-outline" label={locationLabel} onPress={() => setLocOpen(true)} />
                   <FilterPill icon="swap-vertical-outline" label={distanceLabel} onPress={() => setDistOpen(true)} />
+                  {/* Favorites pill shows total liked count */}
+                  <Pressable
+                    onPress={() => setOnlyFavorites((v) => !v)}
+                    style={({ pressed }) => [
+                      styles.pill,
+                      pressed && { opacity: 0.85 },
+                      onlyFavorites && { backgroundColor: theme.colors.secondaryContainer }
+                    ]}
+                    hitSlop={6}
+                  >
+                    <Ionicons
+                      name={onlyFavorites ? "heart" : "heart-outline"}
+                      size={16}
+                      color={onlyFavorites ? theme.colors.error : theme.colors.onSurface}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text numberOfLines={1} style={{ opacity: 0.9 }}>
+                      {favoritesLabel}
+                    </Text>
+                  </Pressable>
                 </View>
 
                 <View style={styles.filtersBottomRow}>
-                  <Pressable
-                    onPress={resetFilters}
-                    style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}
-                  >
+                  <Pressable onPress={resetFilters} style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}>
                     <Ionicons name="filter-outline" size={16} color={GREEN} />
                     <Text style={[styles.resetText, { color: GREEN }]}>Reset Filters</Text>
                   </Pressable>
@@ -332,12 +334,7 @@ export default function DiscoverScreen() {
                       pressed && { opacity: 0.85 }
                     ]}
                   >
-                    <Ionicons
-                      name="map-outline"
-                      size={16}
-                      color={theme.colors.onSurface}
-                      style={{ marginRight: 6 }}
-                    />
+                    <Ionicons name="map-outline" size={16} color={theme.colors.onSurface} style={{ marginRight: 6 }} />
                     <Text>Show Map</Text>
                   </Pressable>
                 </View>
@@ -349,6 +346,7 @@ export default function DiscoverScreen() {
 
           const e = item as EventSummary;
           const categoryColor = CATEGORY_COLORS[e.eventCategory] ?? GREEN;
+          const isFav = favoriteIds.has(e.id);
 
           return (
             <Card
@@ -368,7 +366,23 @@ export default function DiscoverScreen() {
               }
             >
               {e.coverImage && <Card.Cover source={{ uri: e.coverImage }} />}
-              <Card.Title title={e.title} subtitle={new Date(e.startDate).toDateString()} />
+              <Card.Title
+                title={e.title}
+                subtitle={new Date(e.startDate).toDateString()}
+                right={() => (
+                  <Pressable
+                    hitSlop={8}
+                    onPress={() => onToggleFav(e.id)}
+                    style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <Ionicons
+                      name={isFav ? "heart" : "heart-outline"}
+                      size={22}
+                      color={isFav ? theme.colors.error : theme.colors.onSurface}
+                    />
+                  </Pressable>
+                )}
+              />
               <Card.Content>
                 {!!(e.city || e.country) && (
                   <Text style={{ marginBottom: 8 }}>
@@ -423,29 +437,28 @@ export default function DiscoverScreen() {
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Race Types</Text>
 
           <View style={[styles.modalChipRow, { marginBottom: 8 }]}>
-            <Chip mode="outlined" onPress={selectAllCategories} style={styles.modalChip}>Select All</Chip>
-            <Chip mode="outlined" onPress={clearCategories} style={styles.modalChip}>Clear</Chip>
+            <Chip mode="outlined" onPress={selectAllCategories} style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}>Select All</Chip>
+            <Chip mode="outlined" onPress={clearCategories} style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}>Clear</Chip>
           </View>
 
           <View style={styles.modalChipRow}>
             {CATEGORY_OPTIONS.map((c) => {
-              const color = CATEGORY_COLORS[c] ?? GREEN;
               const isSel = selectedCategories.includes(c);
               return (
                 <Chip
                   key={c}
-                  selected={isSel}
                   onPress={() => toggleCategory(c)}
                   mode="outlined"
+                  compact
                   style={[
                     styles.modalChip,
+                    styles.stableChip,
+                    styles.stableChipSize,
                     {
-                      // Same approach you use on cards: colored border + subtle fill
-                      borderColor: color,
-                      backgroundColor: isSel ? `${color}22` : `${color}14`
+                      borderColor: isSel ? GREEN : "#AAA",
+                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)" // green tint vs neutral
                     }
                   ]}
-                  textStyle={{ color, fontWeight: "600" }}
                 >
                   {c}
                 </Chip>
@@ -465,11 +478,28 @@ export default function DiscoverScreen() {
         >
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Upcoming Dates</Text>
           <View style={styles.modalChipRow}>
-            {(["Any", "30d", "90d"] as DateFilter[]).map((d) => (
-              <Chip key={d} selected={dateFilter === d} onPress={() => setDateFilter(d)} style={styles.modalChip}>
-                {d === "Any" ? "Any date" : d === "30d" ? "Next 30 days" : "Next 90 days"}
-              </Chip>
-            ))}
+            {(["Any", "30d", "90d"] as DateFilter[]).map((d) => {
+              const isSel = dateFilter === d;
+              return (
+                <Chip
+                  key={d}
+                  onPress={() => setDateFilter(d)}
+                  mode="outlined"
+                  compact
+                  style={[
+                    styles.modalChip,
+                    styles.stableChip,
+                    styles.stableChipSize,
+                    {
+                      borderColor: isSel ? GREEN : "#AAA",
+                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)"
+                    }
+                  ]}
+                >
+                  {d === "Any" ? "Any date" : d === "30d" ? "Next 30 days" : "Next 90 days"}
+                </Chip>
+              );
+            })}
           </View>
           <Button mode="contained" onPress={() => setDateOpen(false)} style={{ marginTop: 12 }}>
             Apply
@@ -498,23 +528,48 @@ export default function DiscoverScreen() {
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Distance</Text>
 
           <View style={[styles.modalChipRow, { marginBottom: 8 }]}>
-            <Chip mode="outlined" onPress={selectAllDistances} style={styles.modalChip}>Select All</Chip>
-            <Chip mode="outlined" onPress={clearDistances} style={styles.modalChip}>Clear</Chip>
+            <Chip
+              mode="outlined"
+              compact
+              onPress={selectAllDistances}
+              style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}
+            >
+              Select All
+            </Chip>
+            <Chip
+              mode="outlined"
+              compact
+              onPress={clearDistances}
+              style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}
+            >
+              Clear
+            </Chip>
           </View>
 
           <View style={styles.modalChipRow}>
-            {DISTANCE_OPTIONS.map((d) => (
-              <Chip
-                key={d}
-                selected={selectedDistances.includes(d)}
-                onPress={() => toggleDistance(d)}
-                style={styles.modalChip}
-              >
-                {d === "<=5" ? "≤ 5 km" : d === "5-10" ? "5–10 km" : "> 10 km"}
-              </Chip>
-            ))}
+            {DISTANCE_OPTIONS.map((d) => {
+              const isSel = selectedDistances.includes(d);
+              return (
+                <Chip
+                  key={d}
+                  onPress={() => toggleDistance(d)}
+                  mode="outlined"
+                  compact
+                  style={[
+                    styles.modalChip,
+                    styles.stableChip,
+                    styles.stableChipSize,
+                    {
+                      borderColor: isSel ? GREEN : "#AAA",
+                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)"
+                    }
+                  ]}
+                >
+                  {d === "<=5" ? "≤ 5 km" : d === "5-10" ? "5–10 km" : "> 10 km"}
+                </Chip>
+              );
+            })}
           </View>
-
           <Button mode="contained" onPress={() => setDistOpen(false)} style={{ marginTop: 12 }}>
             Apply
           </Button>
@@ -553,7 +608,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start"
   },
   pill: {
-    width: PILL_WIDTH,
+    width: PILL_WIDTH,              // fixed → no jump when text grows
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -591,6 +646,17 @@ const styles = StyleSheet.create({
   sheet: { marginHorizontal: H_PADDING, padding: 16, borderRadius: 16 },
   modalChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   modalChip: { marginRight: 8, marginBottom: 8 },
+
+  // 🔒 Stable chip sizing to prevent modal reflow when selected
+  stableChip: {
+    minWidth: 110,
+    alignSelf: "flex-start",
+    justifyContent: "center"
+  },
+  stableChipSize: {
+    height: 36,
+    paddingHorizontal: 10
+  },
 
   center: { alignItems: "center", justifyContent: "center" }
 });
