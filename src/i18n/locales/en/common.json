@@ -1,3 +1,7 @@
 {
-  "switchLanguage": "Switch Language"
+  "switchLanguage": "Switch Language",
+  "openInMaps": "Open in Maps",
+  "addToCalendar": "Add to Calendar",
+  "eventAddedToCalendar": "Event added to calendar",
+  "errorAddingToCalendar": "Could not add to calendar"
 }

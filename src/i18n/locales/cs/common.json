@@ -1,3 +1,7 @@
 {
-  "switchLanguage": "Změnit jazyk"
+  "switchLanguage": "Změnit jazyk",
+  "openInMaps": "Otevřít v mapách",
+  "addToCalendar": "Přidat do kalendáře",
+  "eventAddedToCalendar": "Událost byla přidána do kalendáře",
+  "errorAddingToCalendar": "Nepodařilo se přidat do kalendáře"
 }

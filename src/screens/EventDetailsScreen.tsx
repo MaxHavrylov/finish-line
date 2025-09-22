@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, StyleSheet, Pressable, Linking, Platform } from "react-native";
-import { Card, Text, Button, Divider, Chip, ActivityIndicator, useTheme } from "react-native-paper";
+import { Card, Text, Button, Divider, Chip, ActivityIndicator, useTheme, Snackbar } from "react-native-paper";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { EventDetails } from "@/types/events";
 import { getEventById } from "@/repositories/eventsRepo";
 import { isFavorite, toggleFavorite } from "@/repositories/favoritesRepo";
-import { buildICS, saveAndShareICS } from '@/utils/calendar';
+import { buildICS, saveAndShareICS, ensureCalendarAccess, createEvent } from '@/utils/calendar';
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -15,10 +16,13 @@ type EventParam = {
 
 export default function EventDetailsScreen({ route, navigation }: any) {
   const theme = useTheme();
+  const { t } = useTranslation('common');
   const { event } = route.params as EventParam;
   const [details, setDetails] = useState<EventDetails | null>(null);
   const [fav, setFav] = useState<boolean>(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -70,24 +74,59 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     if (!details) return;
     setCalendarLoading(true);
     try {
-      // Derive start/end: use event.date (ISO) as base
+      // Check calendar access
+      const { granted } = await ensureCalendarAccess();
+      
+      // Prepare event dates
       const date = new Date(event.date);
       const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9, 0, 0);
       const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+      if (granted) {
+        // Try native calendar first
+        try {
+          await createEvent({
+            title: event.title,
+            startDate: start,
+            endDate: end,
+            location: event.location,
+            notes: eventData.description,
+            url: eventData.website
+          });
+          setSnackbarMessage(t('eventAddedToCalendar'));
+          setSnackbarVisible(true);
+          return;
+        } catch (e) {
+          console.warn('Native calendar add failed:', e);
+          // Fall through to ICS backup
+        }
+      }
+
+      // Fallback to ICS sharing
       const ics = buildICS({
         id: event.id,
         title: event.title,
         location: event.location,
         startISO: start.toISOString(),
         endISO: end.toISOString(),
-        description: undefined,
-        url: undefined
+        description: eventData.description,
+        url: eventData.website
       });
       await saveAndShareICS(ics, `${event.id}.ics`);
+    } catch (err) {
+      console.error('Calendar error:', err);
+      setSnackbarMessage(t('errorAddingToCalendar'));
+      setSnackbarVisible(true);
     } finally {
       setCalendarLoading(false);
     }
-  }, [details, event]);
+  }, [details, event, t]);
+
+  // Prepare event data for calendar, fallback to basic info if not loaded
+  const eventData = {
+    description: details?.descriptionMarkdown || `${event.category} event in ${event.location}`,
+    website: details?.registrationUrl || undefined
+  };
 
   const lat = details?.lat ?? 53.7168;
   const lng = details?.lng ?? -6.3533;
@@ -95,7 +134,24 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       <Card style={styles.card}>
-        {event.image && <Card.Cover source={{ uri: event.image }} />}
+        {event.image ? (
+          <Card.Cover source={{ uri: event.image }} />
+        ) : (
+          <View style={styles.mapContainer}>
+            <MapView
+              style={StyleSheet.absoluteFill}
+              initialRegion={{
+                latitude: lat,
+                longitude: lng,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05
+              }}
+            >
+              <Marker coordinate={{ latitude: lat, longitude: lng }} title={event.title} />
+            </MapView>
+          </View>
+        )}
+
         <Card.Title
           title={event.title}
           subtitle={event.location}
@@ -109,6 +165,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             </Pressable>
           )}
         />
+
         <Card.Content>
           <Text>Date: {new Date(event.date).toLocaleString()}</Text>
           <Text>Category: {event.category}</Text>
@@ -128,34 +185,88 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             )}
           </View>
         </Card.Content>
+
+        <Divider />
+
         <Card.Actions>
-          <Button mode="contained">Register Now</Button>
-          <Button onPress={handleOpenInMaps} icon="map-outline">Open in Maps</Button>
-          <Button onPress={handleAddToCalendar} icon="calendar-plus" disabled={calendarLoading}>
-            {calendarLoading ? <ActivityIndicator size={16} style={{ marginRight: 8 }} /> : null}
-            Add to Calendar
-          </Button>
+          <View style={styles.buttonContainer}>
+            <Button 
+              mode="contained" 
+              style={styles.button}
+            >
+              Register Now
+            </Button>
+            <Button 
+              onPress={handleOpenInMaps} 
+              icon="map-outline"
+              style={styles.button}
+              mode="outlined"
+              testID="btn-open-maps"
+              accessibilityLabel={t('openInMaps')}
+            >
+              {t('openInMaps')}
+            </Button>
+            <Button 
+              onPress={handleAddToCalendar} 
+              icon="calendar-plus" 
+              disabled={calendarLoading}
+              style={styles.button}
+              mode="outlined"
+              testID="btn-add-calendar"
+              accessibilityLabel={t('addToCalendar')}
+            >
+              {calendarLoading ? <ActivityIndicator size={16} style={{ marginRight: 8 }} /> : null}
+              {t('addToCalendar')}
+            </Button>
+          </View>
         </Card.Actions>
       </Card>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: lat,
-          longitude: lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05
-        }}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
       >
-        <Marker coordinate={{ latitude: lat, longitude: lng }} title={event.title} />
-      </MapView>
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  card: { margin: 16, borderRadius: 16 },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
-  chip: { marginRight: 8, marginBottom: 8 },
-  map: { flex: 1, margin: 16, borderRadius: 16 }
+  container: { 
+    flex: 1 
+  },
+  card: { 
+    margin: 16, 
+    borderRadius: 16,
+    overflow: 'hidden'
+  },
+  mapContainer: {
+    height: 200,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0'
+  },
+  row: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    gap: 8, 
+    marginTop: 8 
+  },
+  chip: { 
+    marginRight: 8, 
+    marginBottom: 8 
+  },
+  buttonContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8,
+    marginHorizontal: 8,
+    marginVertical: 4,
+    justifyContent: 'flex-start'
+  },
+  button: {
+    flex: 1,
+    minWidth: 140,
+    marginVertical: 4
+  }
 });

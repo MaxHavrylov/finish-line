@@ -1,3 +1,7 @@
 {
-  "switchLanguage": "Змінити мову"
+  "switchLanguage": "Змінити мову",
+  "openInMaps": "Відкрити на мапі",
+  "addToCalendar": "Додати до календаря",
+  "eventAddedToCalendar": "Подію додано до календаря",
+  "errorAddingToCalendar": "Не вдалося додати до календаря"
 }
