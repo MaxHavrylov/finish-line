@@ -22,7 +22,7 @@ import {
   Button,
   TextInput
 } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { EventSummary, EventCategory } from "../types/events";
@@ -107,6 +107,8 @@ function FilterPill({
   );
 }
 
+
+
 export default function DiscoverScreen() {
   const theme = useTheme();
   const navigation = useNavigation<any>();
@@ -144,6 +146,9 @@ export default function DiscoverScreen() {
     setFavoriteIds(ids);
   }, []);
 
+
+  const route = useRoute<any>();
+
   useEffect(() => {
     (async () => {
       try {
@@ -155,6 +160,24 @@ export default function DiscoverScreen() {
       }
     })();
   }, [load, loadFavorites]);
+
+  // Refresh favorites if navigated back from EventDetailsScreen with favoriteChanged param or on focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const ids = await listFavoriteIds();
+          if (isActive) setFavoriteIds(ids);
+        } catch (e) {
+          // Optionally log error
+        }
+      })();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
