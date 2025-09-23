@@ -1,6 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import {
   NavigationContainer,
   DefaultTheme as NavDefaultTheme,
@@ -39,6 +40,7 @@ const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
   const paperTheme = usePaperTheme();
+  const { t } = useTranslation('common');
 
   const navTheme: NavTheme = {
     dark: paperTheme.dark,
@@ -77,7 +79,7 @@ export default function AppNavigator() {
           component={DiscoverStack}
           options={{ title: "Discover" }}
         />
-        <Tab.Screen name="MyRaces" component={MyRacesScreen} options={{ title: "My Races" }} />
+        <Tab.Screen name="MyRaces" component={MyRacesScreen} options={{ title: t('myRaces') }} />
         <Tab.Screen name="Community" component={CommunityScreen} options={{ title: "Friends" }} />
         <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
       </Tab.Navigator>

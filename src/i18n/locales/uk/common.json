@@ -3,5 +3,10 @@
   "openInMaps": "Відкрити на мапі",
   "addToCalendar": "Додати до календаря",
   "eventAddedToCalendar": "Подію додано до календаря",
-  "errorAddingToCalendar": "Не вдалося додати до календаря"
+  "errorAddingToCalendar": "Не вдалося додати до календаря",
+  "myRaces": "Мої забіги",
+  "future": "Майбутні",
+  "past": "Минулі",
+  "emptyFuture": "Немає майбутніх забігів",
+  "emptyPast": "Немає минулих забігів"
 }

@@ -4,7 +4,7 @@ import { Button, Text, useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 
 export default function MyRacesScreen() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
@@ -15,7 +15,7 @@ export default function MyRacesScreen() {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {activeTab === 'future' ? t('myRacesNoFutureRaces') : t('myRacesNoPastRaces')}
+        {activeTab === 'future' ? t('emptyFuture') : t('emptyPast')}
       </Text>
     </View>
   );
@@ -39,19 +39,19 @@ export default function MyRacesScreen() {
           mode={activeTab === 'future' ? 'contained' : 'text'}
           onPress={() => setActiveTab('future')}
           testID="tab-future"
-          accessibilityLabel={t('myRacesFuture')}
+          accessibilityLabel={t('future')}
           style={styles.tabButton}
         >
-          {t('myRacesFuture')}
+          {t('future')}
         </Button>
         <Button
           mode={activeTab === 'past' ? 'contained' : 'text'}
           onPress={() => setActiveTab('past')}
           testID="tab-past"
-          accessibilityLabel={t('myRacesPast')}
+          accessibilityLabel={t('past')}
           style={styles.tabButton}
         >
-          {t('myRacesPast')}
+          {t('past')}
         </Button>
       </View>
 

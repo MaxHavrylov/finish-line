@@ -3,5 +3,10 @@
   "openInMaps": "Open in Maps",
   "addToCalendar": "Add to Calendar",
   "eventAddedToCalendar": "Event added to calendar",
-  "errorAddingToCalendar": "Could not add to calendar"
+  "errorAddingToCalendar": "Could not add to calendar",
+  "myRaces": "My Races",
+  "future": "Future",
+  "past": "Past",
+  "emptyFuture": "No upcoming races yet",
+  "emptyPast": "No past races yet"
 }

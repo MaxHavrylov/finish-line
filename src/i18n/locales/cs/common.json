@@ -3,5 +3,10 @@
   "openInMaps": "Otevřít v mapách",
   "addToCalendar": "Přidat do kalendáře",
   "eventAddedToCalendar": "Událost byla přidána do kalendáře",
-  "errorAddingToCalendar": "Nepodařilo se přidat do kalendáře"
+  "errorAddingToCalendar": "Nepodařilo se přidat do kalendáře",
+  "myRaces": "Moje závody",
+  "future": "Budoucí",
+  "past": "Minulé",
+  "emptyFuture": "Žádné nadcházející závody",
+  "emptyPast": "Žádné minulé závody"
 }
