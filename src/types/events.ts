@@ -45,3 +45,27 @@ export interface EventDetails extends EventSummary {
   elevationGainM?: number;
   gpxUrl?: string;
 }
+
+export type UserRaceStatus = "FUTURE" | "PAST" | "CANCELLED";
+
+export interface UserRaceBase {
+  id: string;
+  eventId: string;
+  status: UserRaceStatus;
+  bibNumber?: string;
+  waveNumber?: string;
+  startTimeLocal?: string;
+  targetTimeMinutes?: number;
+  resultTimeSeconds?: number;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FutureUserRace extends Pick<UserRaceBase, 
+  "id" | "eventId" | "startTimeLocal" | "bibNumber" | "waveNumber" | "targetTimeMinutes" | "note"
+> {}
+
+export interface PastUserRace extends Pick<UserRaceBase, 
+  "id" | "eventId" | "resultTimeSeconds" | "note"
+> {}

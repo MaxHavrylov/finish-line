@@ -28,7 +28,7 @@ function bootstrap(database: SQLite.SQLiteDatabase) {
   runMigrations(database);
   database.runSync(
     "INSERT OR REPLACE INTO app_meta(key, value) VALUES(?, ?)",
-    ["db_version", "2"]
+    ["db_version", "3"]
   );
 }
 
