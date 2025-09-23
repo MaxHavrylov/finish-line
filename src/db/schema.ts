@@ -90,19 +90,19 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
     `
     CREATE TABLE IF NOT EXISTS user_races (
       id TEXT PRIMARY KEY,
-      eventId TEXT NOT NULL,
+      event_id TEXT NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('FUTURE','PAST','CANCELLED')),
-      bibNumber TEXT NULL,
-      waveNumber TEXT NULL,
-      startTimeLocal TEXT NULL,
-      targetTimeMinutes INTEGER NULL,
-      resultTimeSeconds INTEGER NULL,
+      bib_number TEXT NULL,
+      wave_number TEXT NULL,
+      start_time_local TEXT NULL,
+      target_time_minutes INTEGER NULL,
+      result_time_seconds INTEGER NULL,
       note TEXT NULL,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_user_races_eventId ON user_races(eventId);
+    CREATE INDEX IF NOT EXISTS idx_user_races_event_id ON user_races(event_id);
     CREATE INDEX IF NOT EXISTS idx_user_races_status ON user_races(status);
     `
   );

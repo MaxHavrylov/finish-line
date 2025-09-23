@@ -12,5 +12,18 @@
   "languageSystem": "System language",
   "languageEnglish": "English",
   "languageCzech": "Čeština",
-  "languageUkrainian": "Українська"
+  "languageUkrainian": "Українська",
+  "imGoing": "I'm going",
+  "manage": "Manage",
+  "notGoing": "Not going",
+  "save": "Save",
+  "cancel": "Cancel",
+  "manageRace": "Manage Race",
+  "bibNumber": "Bib Number",
+  "waveNumber": "Wave/Group",
+  "startTime": "Start Time",
+  "targetTime": "Target Time (minutes)",
+  "note": "Notes",
+  "savingChanges": "Saving changes...",
+  "errorSaving": "Error saving changes"
 }

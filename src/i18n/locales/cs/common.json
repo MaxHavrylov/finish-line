@@ -2,15 +2,32 @@
   "switchLanguage": "Změnit jazyk",
   "openInMaps": "Otevřít v mapách",
   "addToCalendar": "Přidat do kalendáře",
-  "eventAddedToCalendar": "Událost byla přidána do kalendáře",
+  "eventAddedToCalendar": "Událost přidána do kalendáře",
   "errorAddingToCalendar": "Nepodařilo se přidat do kalendáře",
+
   "myRaces": "Moje závody",
   "future": "Budoucí",
   "past": "Minulé",
   "emptyFuture": "Žádné nadcházející závody",
   "emptyPast": "Žádné minulé závody",
+
   "languageSystem": "Jazyk systému",
   "languageEnglish": "English",
   "languageCzech": "Čeština",
-  "languageUkrainian": "Ukrajinština"
+  "languageUkrainian": "Ukrajinština",
+
+  "imGoing": "Zúčastním se",
+  "manage": "Spravovat",
+  "notGoing": "Nezúčastním se",
+  "save": "Uložit",
+  "cancel": "Zrušit",
+
+  "manageRace": "Spravovat závod",
+  "bibNumber": "Startovní číslo",
+  "waveNumber": "Vlna/Skupina",
+  "startTime": "Čas startu",
+  "targetTime": "Cílový čas (minuty)",
+  "note": "Poznámky",
+  "savingChanges": "Ukládání změn…",
+  "errorSaving": "Chyba při ukládání"
 }

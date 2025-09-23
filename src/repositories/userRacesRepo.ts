@@ -28,9 +28,9 @@ export async function saveFutureRace(
     db.execSync("BEGIN");
     db.runSync(
       `INSERT INTO user_races (
-        id, eventId, status, bibNumber, waveNumber, 
-        startTimeLocal, targetTimeMinutes, note,
-        createdAt, updatedAt
+        id, event_id, status, bib_number, wave_number, 
+        start_time_local, target_time_minutes, note,
+        created_at, updated_at
       ) VALUES (?, ?, 'FUTURE', ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
@@ -55,20 +55,31 @@ export async function saveFutureRace(
 export async function listFuture(): Promise<FutureUserRace[]> {
   const db = getDb();
   return db.getAllSync<FutureUserRace>(
-    `SELECT id, eventId, bibNumber, waveNumber, startTimeLocal, targetTimeMinutes, note
+    `SELECT 
+      id,
+      event_id as eventId,
+      bib_number as bibNumber,
+      wave_number as waveNumber,
+      start_time_local as startTimeLocal,
+      target_time_minutes as targetTimeMinutes,
+      note
      FROM user_races 
      WHERE status = 'FUTURE'
-     ORDER BY startTimeLocal ASC NULLS LAST, createdAt DESC`
+     ORDER BY start_time_local ASC NULLS LAST, created_at DESC`
   );
 }
 
 export async function listPast(): Promise<PastUserRace[]> {
   const db = getDb();
   return db.getAllSync<PastUserRace>(
-    `SELECT id, eventId, resultTimeSeconds, note
+    `SELECT 
+      id,
+      event_id as eventId,
+      result_time_seconds as resultTimeSeconds,
+      note
      FROM user_races 
      WHERE status = 'PAST'
-     ORDER BY startTimeLocal DESC NULLS LAST, createdAt DESC`
+     ORDER BY start_time_local DESC NULLS LAST, created_at DESC`
   );
 }
 
@@ -136,8 +147,8 @@ export async function getByEventId(
   return db.getFirstSync<{ id: string; status: UserRaceStatus }>(
     `SELECT id, status
      FROM user_races
-     WHERE eventId = ?
-     ORDER BY createdAt DESC
+     WHERE event_id = ?
+     ORDER BY created_at DESC
      LIMIT 1`,
     [eventId]
   ) ?? null;

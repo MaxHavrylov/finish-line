@@ -12,5 +12,18 @@
   "languageSystem": "Мова системи",
   "languageEnglish": "Англійська",
   "languageCzech": "Чеська",
-  "languageUkrainian": "Українська"
+  "languageUkrainian": "Українська",
+  "imGoing": "Я піду",
+  "manage": "Керувати",
+  "notGoing": "Не піду",
+  "save": "Зберегти",
+  "cancel": "Скасувати",
+  "manageRace": "Керування забігом",
+  "bibNumber": "Номер учасника",
+  "waveNumber": "Хвиля/Група",
+  "startTime": "Час старту",
+  "targetTime": "Цільовий час (хвилини)",
+  "note": "Нотатки",
+  "savingChanges": "Збереження змін...",
+  "errorSaving": "Помилка збереження"
 }
