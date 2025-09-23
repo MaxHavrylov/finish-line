@@ -2,13 +2,19 @@ import React, { useContext, useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card, Text, Switch, List, Divider } from "react-native-paper";
 import { getItem, setItem } from "@/utils/storage";
-import i18n from "@/i18n";
+import i18n, { 
+  LANGUAGE_STORAGE_KEY, 
+  LANGUAGE_CODES, 
+  SYSTEM_LANGUAGE,
+  LanguageCode, 
+  getDeviceLanguage 
+} from "@/i18n";
 import { ThemeContext, ThemeMode } from "@/theme/ThemeProvider";
 import { useTranslation } from "react-i18next";
 
 // Keys for AsyncStorage
 const STORAGE_KEYS = {
-  language: "settings.language",
+  language: LANGUAGE_STORAGE_KEY,
   reminders: "settings.reminders",
   community: "settings.community",
   comms: "settings.comms"
@@ -23,7 +29,7 @@ export default function SettingsScreen() {
   const { mode, setMode } = useContext(ThemeContext);
   const { t } = useTranslation();
 
-  const [language, setLanguage] = useState<string>("English");
+  const [language, setLanguage] = useState<LanguageCode>(SYSTEM_LANGUAGE);
   const [eventReminders, setEventReminders] = useState<boolean>(true);
   const [communityUpdates, setCommunityUpdates] = useState<boolean>(true);
   const [communicationPrefs, setCommunicationPrefs] = useState<boolean>(false);
@@ -31,7 +37,7 @@ export default function SettingsScreen() {
   // Load persisted non-theme settings
   useEffect(() => {
     (async () => {
-      const lang = await getItem<string>(STORAGE_KEYS.language);
+      const lang = await getItem<LanguageCode>(STORAGE_KEYS.language);
       const rem = await getItem<boolean>(STORAGE_KEYS.reminders);
       const com = await getItem<boolean>(STORAGE_KEYS.community);
       const cp = await getItem<boolean>(STORAGE_KEYS.comms);
@@ -46,6 +52,11 @@ export default function SettingsScreen() {
   // Persist on change
   useEffect(() => {
     setItem(STORAGE_KEYS.language, language);
+    // Update i18n language when changed
+    const effectiveLanguage = language === SYSTEM_LANGUAGE 
+      ? getDeviceLanguage() 
+      : language;
+    i18n.changeLanguage(effectiveLanguage);
   }, [language]);
 
   useEffect(() => {
@@ -62,12 +73,11 @@ export default function SettingsScreen() {
 
   // Handlers
   const cycleLanguage = () => {
-    // Cycle EN -> UK -> CS -> EN (labels remain in local language names)
-    const next =
-      language === "English" ? "Українська" : language === "Українська" ? "Čeština" : "English";
+    // Cycle system -> en -> uk -> cs -> system
+    const order: LanguageCode[] = ["system", "en", "uk", "cs"];
+    const idx = order.indexOf(language);
+    const next = order[(idx + 1) % order.length];
     setLanguage(next);
-    const code = next === "English" ? "en" : next === "Українська" ? "uk" : "cs";
-    i18n.changeLanguage(code);
   };
 
   const cycleThemeMode = () => {
@@ -75,6 +85,19 @@ export default function SettingsScreen() {
     const idx = order.indexOf(mode);
     const next = order[(idx + 1) % order.length];
     setMode(next);
+  };
+
+  // Get the display name for the current language
+  const getLanguageLabel = () => {
+    if (language === SYSTEM_LANGUAGE) {
+      return t("common:languageSystem");
+    }
+    const langMap = {
+      en: "English",
+      uk: "Ukrainian",
+      cs: "Czech"
+    };
+    return t(`common:language${langMap[language]}`);
   };
 
   const themeLabel =
@@ -96,7 +119,7 @@ export default function SettingsScreen() {
           right={() => (
             <RightLabel>
               <Text style={styles.rightText} numberOfLines={1}>
-                {language}
+                {getLanguageLabel()}
               </Text>
             </RightLabel>
           )}

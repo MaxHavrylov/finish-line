@@ -8,5 +8,9 @@
   "future": "Майбутні",
   "past": "Минулі",
   "emptyFuture": "Немає майбутніх забігів",
-  "emptyPast": "Немає минулих забігів"
+  "emptyPast": "Немає минулих забігів",
+  "languageSystem": "Мова системи",
+  "languageEnglish": "Англійська",
+  "languageCzech": "Чеська",
+  "languageUkrainian": "Українська"
 }

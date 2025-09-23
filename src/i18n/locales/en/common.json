@@ -8,5 +8,9 @@
   "future": "Future",
   "past": "Past",
   "emptyFuture": "No upcoming races yet",
-  "emptyPast": "No past races yet"
+  "emptyPast": "No past races yet",
+  "languageSystem": "System language",
+  "languageEnglish": "English",
+  "languageCzech": "Čeština",
+  "languageUkrainian": "Українська"
 }

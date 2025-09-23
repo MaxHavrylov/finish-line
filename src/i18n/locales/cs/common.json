@@ -8,5 +8,9 @@
   "future": "Budoucí",
   "past": "Minulé",
   "emptyFuture": "Žádné nadcházející závody",
-  "emptyPast": "Žádné minulé závody"
+  "emptyPast": "Žádné minulé závody",
+  "languageSystem": "Jazyk systému",
+  "languageEnglish": "English",
+  "languageCzech": "Čeština",
+  "languageUkrainian": "Ukrajinština"
 }
