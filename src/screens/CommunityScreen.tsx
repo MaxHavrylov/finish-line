@@ -1,189 +1,265 @@
-import React from "react";
-import { View, FlatList, Image, StyleSheet } from "react-native";
-import { Card, Text, Button, Chip, Avatar, Divider } from "react-native-paper";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  StatusBar,
+} from "react-native";
+import {
+  Text,
+  Card,
+  Avatar,
+  Chip,
+  Button,
+  Searchbar,
+  ActivityIndicator,
+  useTheme,
+} from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { mockRunners, Runner } from "@/data/mockRunners";
 
-// --- Types ---
-type FriendActivity = {
-  id: string;
-  name: string;
-  avatar: string;
-  text: string;
-  timeAgo: string;
-};
+const PAGE_SIZE = 20;
 
-type Event = {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  status: "Upcoming" | "Open" | "Closed";
-  friendsJoining: number;
-  friendAvatars: string[];
-  image?: string;
-};
+function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: () => void }) {
+  const { t } = useTranslation('common');
+  const theme = useTheme();
+  
+  // Get initials for avatar
+  const initials = runner.name
+    .split(" ")
+    .map(name => name.charAt(0))
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
 
-// --- Mock data (replace later with API) ---
-const activities: FriendActivity[] = [
-  {
-    id: "f1",
-    name: "Jane Doe",
-    avatar: "https://i.pravatar.cc/100?img=5",
-    text: "completed a 5K run",
-    timeAgo: "2 hours ago"
-  },
-  {
-    id: "f2",
-    name: "John Smith",
-    avatar: "https://i.pravatar.cc/100?img=15",
-    text: "finished a sprint triathlon",
-    timeAgo: "1 day ago"
-  }
-];
-
-const friendEvents: Event[] = [
-  {
-    id: "e1",
-    title: "City Marathon 2024",
-    date: "Oct 26, 2024",
-    location: "Central Park, NYC",
-    status: "Upcoming",
-    friendsJoining: 3,
-    friendAvatars: [
-      "https://i.pravatar.cc/100?img=1",
-      "https://i.pravatar.cc/100?img=2",
-      "https://i.pravatar.cc/100?img=3"
-    ],
-    image: "https://picsum.photos/600/300?mar"
-  },
-  {
-    id: "e2",
-    title: "Triathlon Challenge",
-    date: "Nov 15, 2024",
-    location: "Lake Tahoe, CA",
-    status: "Upcoming",
-    friendsJoining: 1,
-    friendAvatars: ["https://i.pravatar.cc/100?img=12"],
-    image: "https://picsum.photos/600/300?tri"
-  }
-];
-
-export default function CommunityScreen() {
-  const navigation = useNavigation<any>();
+  // Generate random but deterministic avatar color based on runner ID
+  const avatarColor = useMemo(() => {
+    const id = parseInt(runner.id.replace(/\D/g, "") || "1", 10);
+    const colors = [
+      theme.colors.primary,
+      theme.colors.secondary,
+      theme.colors.tertiary,
+      theme.colors.errorContainer,
+      theme.colors.primary,
+    ];
+    return colors[id % colors.length];
+  }, [runner.id, theme.colors]);
 
   return (
-    <FlatList
-      style={styles.container}
-      ListHeaderComponent={
-        <View>
-          {/* Friend Activity */}
-          <Text variant="titleLarge" style={styles.sectionTitle}>
-            Friend Activity
+    <Card style={styles.card} mode="outlined">
+      <Card.Content style={styles.cardContent}>
+        <Avatar.Text 
+          size={50} 
+          label={initials} 
+          color="white"
+          style={{ backgroundColor: avatarColor }}
+        />
+        <View style={styles.runnerInfo}>
+          <Text variant="titleMedium">{runner.name}</Text>
+          <Text variant="bodyMedium" style={styles.location}>
+            {runner.location}
           </Text>
-          <FlatList
-            data={activities}
-            keyExtractor={(i) => i.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 8 }}
-            renderItem={({ item }) => (
-              <Card style={styles.activityCard}>
-                <Card.Content style={styles.activityRow}>
-                  <Avatar.Image size={48} source={{ uri: item.avatar }} />
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text variant="titleSmall">{item.name}</Text>
-                    <Text style={styles.dim}>{item.text}</Text>
-                    <Text style={styles.dim}>{item.timeAgo}</Text>
-                  </View>
-                </Card.Content>
-              </Card>
-            )}
-          />
-
-          {/* Upcoming with Friends */}
-          <Text variant="titleLarge" style={[styles.sectionTitle, { marginTop: 16 }]}>
-            Upcoming Events with Friends
-          </Text>
+          {runner.stats && (
+            <View style={styles.stats}>
+              <Text variant="bodySmall">
+                {t('races')}: {runner.stats.races} • {t('prs')}: {runner.stats.prs}
+              </Text>
+            </View>
+          )}
         </View>
-      }
-      data={friendEvents}
-      keyExtractor={(i) => i.id}
-      ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
-      renderItem={({ item }) => {
-        // ✅ Build the payload inline (no hooks in helpers)
-        const navEvent = {
-          id: item.id,
-          title: item.title,
-          date: item.date,
-          location: item.location,
-          category: "Community",
-          distance: "",
-          image: item.image ?? "https://picsum.photos/600/300?comm"
-        };
+        <Button
+          mode="outlined"
+          onPress={onViewRunner}
+          style={styles.viewButton}
+          accessibilityLabel={t('viewRunner')}
+        >
+          {t('viewRunner')}
+        </Button>
+      </Card.Content>
+    </Card>
+  );
+}
 
-        return (
-          <Card
-            style={styles.eventCard}
-            onPress={() => navigation.navigate("EventDetails", { event: navEvent })}
-          >
-            {item.image && <Card.Cover source={{ uri: item.image }} />}
-            <Card.Title
-              title={item.title}
-              subtitle={`${item.date}  •  ${item.location}`}
-              right={() => (
-                <Chip compact style={styles.statusChip}>
-                  {item.status}
-                </Chip>
-              )}
-            />
-            <Card.Content>
-              <View style={styles.friendsRow}>
-                <View style={styles.avatarsStack}>
-                  {item.friendAvatars.slice(0, 3).map((uri, idx) => (
-                    <Image
-                      key={uri}
-                      source={{ uri }}
-                      style={[styles.smallAvatar, { left: idx * 18 }]}
-                    />
-                  ))}
-                </View>
-                <Text style={styles.dim}>
-                  {item.friendsJoining} {item.friendsJoining === 1 ? "friend" : "friends"} joining
-                </Text>
-              </View>
-            </Card.Content>
-            <Card.Actions>
-              <Button
-                mode="outlined"
-                onPress={() => navigation.navigate("EventDetails", { event: navEvent })}
-              >
-                View Details
-              </Button>
-            </Card.Actions>
-          </Card>
-        );
-      }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+export default function CommunityScreen() {
+  const navigation = useNavigation();
+  const { t } = useTranslation('common');
+  
+  const [search, setSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Available locations for filtering
+  const locations = useMemo(() => {
+    const locSet = new Set(mockRunners.map(r => r.location));
+    return Array.from(locSet).sort();
+  }, []);
+
+  // Filter runners based on search and location
+  const filteredRunners = useMemo(() => {
+    return mockRunners.filter(runner => {
+      const matchesSearch = search
+        ? runner.name.toLowerCase().includes(search.toLowerCase())
+        : true;
+      const matchesLocation = locationFilter
+        ? runner.location === locationFilter
+        : true;
+      return matchesSearch && matchesLocation;
+    });
+  }, [search, locationFilter]);
+
+  // Paginate the filtered runners
+  const paginatedRunners = useMemo(() => {
+    return filteredRunners.slice(0, page * PAGE_SIZE);
+  }, [filteredRunners, page]);
+
+  const handleEndReached = useCallback(() => {
+    if (paginatedRunners.length < filteredRunners.length) {
+      setIsLoading(true);
+      // Simulate network delay
+      setTimeout(() => {
+        setPage(prev => prev + 1);
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [paginatedRunners.length, filteredRunners.length]);
+
+  const handleViewRunner = useCallback((runnerId: string) => {
+    // @ts-ignore - We know this route exists in our stack navigator
+    navigation.navigate('RunnerDetails', { runnerId });
+  }, [navigation]);
+
+  const renderItem = useCallback(({ item }: { item: Runner }) => (
+    <RunnerCard 
+      runner={item} 
+      onViewRunner={() => handleViewRunner(item.id)} 
     />
+  ), [handleViewRunner]);
+
+  const toggleLocationFilter = useCallback((location: string) => {
+    setLocationFilter(prev => prev === location ? '' : location);
+    setPage(1); // Reset pagination when filter changes
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar />
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.title}>{t('community')}</Text>
+        
+        <Searchbar
+          placeholder={t('search')}
+          onChangeText={text => {
+            setSearch(text);
+            setPage(1); // Reset pagination when search changes
+          }}
+          value={search}
+          style={styles.searchBar}
+          testID="community-search"
+        />
+        
+        <Text variant="labelMedium" style={styles.filterLabel}>
+          {t('location')}:
+        </Text>
+        
+        <View style={styles.locationFilter} testID="community-location-filter">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {locations.map(location => (
+              <Chip
+                key={location}
+                selected={location === locationFilter}
+                onPress={() => toggleLocationFilter(location)}
+                style={styles.locationChip}
+                mode="outlined"
+              >
+                {location}
+              </Chip>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+
+      <FlatList
+        data={paginatedRunners}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text variant="bodyLarge">{t('emptyList')}</Text>
+          </View>
+        }
+        ListFooterComponent={
+          isLoading ? (
+            <ActivityIndicator style={styles.loading} />
+          ) : null
+        }
+        testID="community-list"
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  sectionTitle: { marginBottom: 8 },
-  dim: { opacity: 0.7 },
-  activityCard: { borderRadius: 16, marginRight: 12, width: 260 },
-  activityRow: { flexDirection: "row", alignItems: "center" },
-  eventCard: { borderRadius: 16 },
-  statusChip: { marginRight: 12, alignSelf: "center" },
-  friendsRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  avatarsStack: { height: 28, width: 80 },
-  smallAvatar: {
-    position: "absolute",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: "#fff"
-  }
+  container: { 
+    flex: 1 
+  },
+  header: {
+    padding: 16,
+    paddingBottom: 8,
+  },
+  title: {
+    marginBottom: 16,
+    fontWeight: "bold",
+  },
+  searchBar: {
+    marginBottom: 12,
+  },
+  filterLabel: {
+    marginBottom: 8,
+  },
+  locationFilter: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  locationChip: {
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  list: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  card: {
+    marginBottom: 12,
+  },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  runnerInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  location: {
+    opacity: 0.7,
+  },
+  stats: {
+    marginTop: 4,
+  },
+  viewButton: {
+    marginLeft: 8,
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: "center",
+  },
+  loading: {
+    padding: 16,
+  },
 });

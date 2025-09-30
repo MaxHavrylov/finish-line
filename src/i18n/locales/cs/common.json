@@ -29,5 +29,16 @@
   "targetTime": "Cílový čas (minuty)",
   "note": "Poznámky",
   "savingChanges": "Ukládání změn…",
-  "errorSaving": "Chyba při ukládání"
+  "errorSaving": "Chyba při ukládání",
+  
+  "community": "Komunita",
+  "viewRunner": "Zobrazit běžce",
+  "follow": "Sledovat",
+  "unfollow": "Přestat sledovat",
+  "location": "Lokalita",
+  "search": "Hledat",
+  "emptyList": "Není co zobrazit",
+  "runners": "Běžci",
+  "races": "Závody",
+  "prs": "Osobní rekordy"
 }

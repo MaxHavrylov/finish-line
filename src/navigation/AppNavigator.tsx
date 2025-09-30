@@ -12,6 +12,7 @@ import DiscoverScreen from "../screens/DiscoverScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
 import MyRacesScreen from "../screens/MyRacesScreen";
 import CommunityScreen from "../screens/CommunityScreen";
+import RunnerDetailsScreen from "../screens/RunnerDetailsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme as usePaperTheme } from "react-native-paper";
@@ -31,6 +32,24 @@ function DiscoverStack() {
         name="EventDetails"
         component={EventDetailsScreen}
         options={{ title: "Event Details" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function CommunityStack() {
+  const { t } = useTranslation('common');
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="CommunityList"
+        component={CommunityScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RunnerDetails"
+        component={RunnerDetailsScreen}
+        options={{ title: t('viewRunner') }}
       />
     </Stack.Navigator>
   );
@@ -80,8 +99,8 @@ export default function AppNavigator() {
           options={{ title: "Discover" }}
         />
         <Tab.Screen name="MyRaces" component={MyRacesScreen} options={{ title: t('myRaces') }} />
-        <Tab.Screen name="Community" component={CommunityScreen} options={{ title: "Friends" }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
+        <Tab.Screen name="Community" component={CommunityStack} options={{ title: t('community') }} />
+        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('settings') }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

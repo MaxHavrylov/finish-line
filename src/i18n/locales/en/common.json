@@ -25,5 +25,15 @@
   "targetTime": "Target Time (minutes)",
   "note": "Notes",
   "savingChanges": "Saving changes...",
-  "errorSaving": "Error saving changes"
+  "errorSaving": "Error saving changes",
+  "community": "Community",
+  "viewRunner": "View Runner",
+  "follow": "Follow",
+  "unfollow": "Unfollow",
+  "location": "Location",
+  "search": "Search",
+  "emptyList": "Nothing to show",
+  "runners": "Runners",
+  "races": "Races",
+  "prs": "PRs"
 }

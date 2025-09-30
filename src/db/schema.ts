@@ -106,4 +106,20 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_user_races_status ON user_races(status);
     `
   );
+  
+  // 004 - follows
+  apply(
+    "004_follows",
+    `
+    CREATE TABLE IF NOT EXISTS follows (
+      follower_id TEXT NOT NULL,
+      following_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (follower_id, following_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
+    CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
+    `
+  );
 }
