@@ -343,40 +343,59 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             </View>
           </Card.Content>
 
-          <Card.Actions>
+          <Card.Actions style={styles.cardActions}>
             <View style={styles.buttonContainer}>
-              <Button
-                mode="text"
-                onPress={handleOpenInMaps}
-                icon="map-marker"
-                style={styles.button}
-                testID="btn-open-maps"
-              >
-                {t('openInMaps')}
-              </Button>
-              
-              <Button
-                mode="text"
-                onPress={handleAddToCalendar}
-                icon="calendar"
-                style={styles.button}
-                loading={calendarLoading}
-                disabled={calendarLoading}
-                testID="btn-add-calendar"
-              >
-                {t('addToCalendar')}
-              </Button>
+              {/* First row - Register Now and I'm Going */}
+              <View style={styles.buttonRow}>
+                <Button
+                  mode="contained"
+                  onPress={() => details?.registrationUrl ? Linking.openURL(details.registrationUrl) : null}
+                  style={styles.registerButton}
+                  contentStyle={styles.buttonContent}
+                  disabled={!details?.registrationUrl}
+                >
+                  {t('registerNow')}
+                </Button>
 
-              <Button
-                mode="contained"
-                onPress={canShowImGoing ? handleImGoing : () => setManageModalVisible(true)}
-                style={styles.button}
-                loading={saving}
-                disabled={saving}
-                testID={canShowImGoing ? "btn-im-going" : "btn-manage"}
-              >
-                {canShowImGoing ? t('imGoing') : t('manage')}
-              </Button>
+                <Button
+                  mode="contained"
+                  onPress={canShowImGoing ? handleImGoing : () => setManageModalVisible(true)}
+                  style={styles.primaryButton}
+                  contentStyle={styles.buttonContent}
+                  loading={saving}
+                  disabled={saving}
+                  testID={canShowImGoing ? "btn-im-going" : "btn-manage"}
+                >
+                  {canShowImGoing ? t('imGoing') : t('manage')}
+                </Button>
+              </View>
+
+              {/* Second row - Map and Calendar */}
+              <View style={styles.buttonRow}>
+                <Button
+                  mode="outlined"
+                  onPress={handleOpenInMaps}
+                  icon="map"
+                  style={styles.utilityButton}
+                  contentStyle={styles.buttonContent}
+                  testID="btn-open-maps"
+                >
+                  {t('openInMaps')}
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  onPress={handleAddToCalendar}
+                  icon="calendar"
+                  style={styles.utilityButton}
+                  contentStyle={styles.buttonContent}
+                  loading={calendarLoading}
+                  disabled={calendarLoading}
+                  testID="btn-add-calendar"
+                >
+                  {t('addToCalendar')}
+                </Button>
+              </View>
             </View>
           </Card.Actions>
         </Card>
@@ -419,18 +438,30 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8 
   },
-  buttonContainer: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    gap: 8,
-    marginHorizontal: 8,
-    marginVertical: 4,
-    justifyContent: 'flex-start'
+  cardActions: {
+    padding: 16,
   },
-  button: {
+  buttonContainer: {
+    gap: 12,
+    width: '100%',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  registerButton: {
     flex: 1,
-    minWidth: 140,
-    marginVertical: 4
+    backgroundColor: '#4CAF50', // Green color
+  },
+  primaryButton: {
+    flex: 1,
+  },
+  utilityButton: {
+    flex: 1,
+  },
+  buttonContent: {
+    height: 44,
   },
   // Modal styles
   modal: {
