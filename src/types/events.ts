@@ -35,6 +35,7 @@ export interface EventSummary {
   updatedAt: string; // ISO
   deletedAt?: string | null;
   minDistanceLabel?: string; // quick display in lists
+  providerName?: string; // provider name for display
 }
 
 export interface EventDetails extends EventSummary {

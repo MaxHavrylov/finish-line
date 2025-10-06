@@ -12,6 +12,7 @@ import { getEventById } from "@/repositories/eventsRepo";
 import { isFavorite, toggleFavorite } from "@/repositories/favoritesRepo";
 import { buildICS, saveAndShareICS, ensureCalendarAccess, createEvent } from '@/utils/calendar';
 import * as userRacesRepo from "@/repositories/userRacesRepo";
+import { providersRepo } from "@/repositories/providersRepo";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -26,6 +27,9 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   // UI state
   const [details, setDetails] = useState<EventDetails | null>(null);
   const [fav, setFav] = useState<boolean>(false);
+  const [provider, setProvider] = useState<{ id: string; name: string; logoUrl?: string; website?: string } | null>(null);
+  const [isFollowingProvider, setIsFollowingProvider] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -46,15 +50,52 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   useEffect(() => {
     mounted.current = true;
     (async () => {
-      const [d, f, r] = await Promise.all([
-        getEventById(event.id),
-        isFavorite(event.id),
-        userRacesRepo.getByEventId(event.id)
-      ]);
-      if (mounted.current) {
-        if (d) setDetails(d);
-        setFav(f);
-        setRaceRecord(r);
+      try {
+        console.log('[EventDetails] Loading event:', event.id);
+        
+        console.log('[EventDetails] Calling getEventById...');
+        const d = await getEventById(event.id);
+        console.log('[EventDetails] getEventById result:', !!d);
+        
+        console.log('[EventDetails] Calling isFavorite...');
+        const f = await isFavorite(event.id);
+        console.log('[EventDetails] isFavorite result:', f);
+        
+        console.log('[EventDetails] Calling userRacesRepo.getByEventId...');
+        const r = await userRacesRepo.getByEventId(event.id);
+        console.log('[EventDetails] userRacesRepo result:', !!r);
+        
+        console.log('[EventDetails] Calling providersRepo.getProviderByEventId...');
+        const p = await providersRepo.getProviderByEventId(event.id);
+        console.log('[EventDetails] providersRepo result:', !!p);
+        
+        console.log('[EventDetails] All calls completed, setting state...');
+        
+        if (mounted.current) {
+          if (d) {
+            setDetails(d);
+            console.log('[EventDetails] Details set successfully');
+          } else {
+            console.warn('[EventDetails] No details found for event:', event.id);
+          }
+          setFav(f);
+          setRaceRecord(r);
+          setProvider(p);
+          
+          // Check follow status if provider exists
+          if (p) {
+            try {
+              const following = await providersRepo.isFollowing('me', p.id);
+              if (mounted.current) setIsFollowingProvider(following);
+            } catch (error) {
+              console.warn('Failed to check follow status:', error);
+            }
+          }
+          
+          console.log('[EventDetails] State update completed');
+        }
+      } catch (error) {
+        console.error('[EventDetails] Error in useEffect:', error);
       }
     })();
     return () => { mounted.current = false; };
@@ -180,6 +221,34 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       if (mounted.current) setSaving(false);
     }
   }, [raceRecord, t]);
+
+  const handleToggleFollowProvider = useCallback(async () => {
+    if (!provider) return;
+    
+    setFollowLoading(true);
+    const wasFollowing = isFollowingProvider;
+    
+    // Optimistic UI update
+    setIsFollowingProvider(!wasFollowing);
+    
+    try {
+      if (wasFollowing) {
+        await providersRepo.unfollow('me', provider.id);
+      } else {
+        await providersRepo.follow('me', provider.id);
+      }
+    } catch (error) {
+      // Revert on error
+      if (mounted.current) {
+        setIsFollowingProvider(wasFollowing);
+        setSnackbarMessage(t('errorSaving'));
+        setSnackbarVisible(true);
+      }
+      console.warn('Failed to toggle follow status:', error);
+    } finally {
+      if (mounted.current) setFollowLoading(false);
+    }
+  }, [provider, isFollowingProvider, t]);
 
   const canShowImGoing = !raceRecord || raceRecord.status !== 'FUTURE';
 
@@ -328,6 +397,54 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           <Card.Content>
             <Text>Date: {new Date(event.date).toLocaleString()}</Text>
             <Text>Category: {event.category}</Text>
+
+            {provider && (
+              <>
+                <Divider style={{ marginVertical: 8 }} />
+                <Pressable 
+                  style={styles.providerSection} 
+                  testID="provider-block"
+                  onPress={() => (navigation as any).navigate("ProviderDetails", { providerId: provider.id })}
+                >
+                  <Text variant="titleMedium">{t('eventOrganizer')}</Text>
+                  <View style={styles.providerContainer}>
+                    <View style={styles.providerInfo}>
+                      <Text variant="titleSmall">{provider.name}</Text>
+                    </View>
+                    <View style={styles.providerButtons}>
+                      <Button
+                        mode={isFollowingProvider ? "outlined" : "contained"}
+                        compact
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleToggleFollowProvider();
+                        }}
+                        loading={followLoading}
+                        disabled={followLoading}
+                        testID="btn-follow-provider"
+                        style={{ marginRight: 8 }}
+                      >
+                        {t(isFollowingProvider ? 'unfollowProvider' : 'followProvider')}
+                      </Button>
+                      {provider.website && (
+                        <Button
+                          mode="contained"
+                          compact
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            provider.website && Linking.openURL(provider.website);
+                          }}
+                          testID="btn-provider-website"
+                        >
+                          {t('website')}
+                        </Button>
+                      )}
+                    </View>
+                  </View>
+                </Pressable>
+              </>
+            )}
+
             <Divider style={{ marginVertical: 8 }} />
             <Text variant="titleMedium">Available Distances</Text>
             <View style={styles.row}>
@@ -491,5 +608,24 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minWidth: 100
+  },
+  // Provider styles
+  providerSection: {
+    marginVertical: 8,
+  },
+  providerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    minHeight: 40,
+  },
+  providerInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  providerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   }
 });

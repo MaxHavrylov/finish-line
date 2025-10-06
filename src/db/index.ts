@@ -26,6 +26,26 @@ function bootstrap(database: SQLite.SQLiteDatabase) {
   `);
   // ✅ pass db instance to avoid require cycle
   runMigrations(database);
+  
+  // Diagnostic logging
+  try {
+    const providerCount = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM providers'
+    );
+    const eventProviderCount = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM event_providers'
+    );
+    const sampleMappings = database.getAllSync<{ eventId: string; providerId: string; providerName: string }>(
+      'SELECT ep.eventId, ep.providerId, p.name as providerName FROM event_providers ep JOIN providers p ON p.id = ep.providerId LIMIT 3'
+    );
+    
+    console.log('[db] Providers count:', providerCount?.count || 0);
+    console.log('[db] Event-providers count:', eventProviderCount?.count || 0);
+    console.log('[db] Sample mappings:', sampleMappings);
+  } catch (error) {
+    console.log('[db] Error fetching diagnostic info:', error);
+  }
+  
   database.runSync(
     "INSERT OR REPLACE INTO app_meta(key, value) VALUES(?, ?)",
     ["db_version", "4"]
@@ -113,22 +133,26 @@ export function upsertEvents(details: EventDetails[]) {
 
 export function listEventSummaries(): EventSummary[] {
   const database = getDb();
-  const rows = database.getAllSync<EventSummary & { start_date: string; updated_at: string }>(
-    `SELECT id, title, start_date, city, country, lat, lng, event_category as eventCategory,
-            status, cover_image as coverImage, updated_at as updatedAt, deleted_at as deletedAt,
-            min_distance_label as minDistanceLabel
-     FROM events
-     WHERE deleted_at IS NULL
-     ORDER BY datetime(start_date) ASC`
+  const rows = database.getAllSync<EventSummary & { start_date: string; updated_at: string; provider_name?: string }>(
+    `SELECT e.id, e.title, e.start_date, e.city, e.country, e.lat, e.lng, e.event_category as eventCategory,
+            e.status, e.cover_image as coverImage, e.updated_at as updatedAt, e.deleted_at as deletedAt,
+            e.min_distance_label as minDistanceLabel, p.name as provider_name
+     FROM events e
+     LEFT JOIN event_providers ep ON e.id = ep.eventId
+     LEFT JOIN providers p ON ep.providerId = p.id
+     WHERE e.deleted_at IS NULL
+     ORDER BY datetime(e.start_date) ASC`
   );
   return rows.map(r => ({
     ...r,
     startDate: r.start_date,
-    updatedAt: r.updated_at
+    updatedAt: r.updated_at,
+    providerName: r.provider_name || undefined
   }));
 }
 
 export function getEventDetails(id: string) {
+  console.log('[getEventDetails] Looking for event:', id);
   const database = getDb();
   const evt = database.getFirstSync<
     (EventSummary & { start_date: string; updated_at: string }) | undefined
@@ -140,13 +164,20 @@ export function getEventDetails(id: string) {
     [id]
   );
 
-  if (!evt) return undefined;
+  console.log('[getEventDetails] Found event:', !!evt, evt?.title);
+
+  if (!evt) {
+    console.log('[getEventDetails] Event not found in database for id:', id);
+    return undefined;
+  }
 
   const distances = database.getAllSync<EventDistance>(
     `SELECT id, event_id as eventId, label, distance_km as distanceKm, type, price_from as priceFrom, cutoff_minutes as cutoffMinutes, wave_info as waveInfo
      FROM event_distances WHERE event_id = ?`,
     [id]
   );
+
+  console.log('[getEventDetails] Found distances:', distances.length);
 
   return {
     ...evt,

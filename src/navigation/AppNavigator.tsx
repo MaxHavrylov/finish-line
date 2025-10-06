@@ -10,6 +10,7 @@ import {
 } from "@react-navigation/native";
 import DiscoverScreen from "../screens/DiscoverScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
+import ProviderDetailsScreen from "../screens/ProviderDetailsScreen";
 import MyRacesScreen from "../screens/MyRacesScreen";
 import CommunityScreen from "../screens/CommunityScreen";
 import RunnerDetailsScreen from "../screens/RunnerDetailsScreen";
@@ -32,6 +33,11 @@ function DiscoverStack() {
         name="EventDetails"
         component={EventDetailsScreen}
         options={{ title: "Event Details" }}
+      />
+      <Stack.Screen
+        name="ProviderDetails"
+        component={ProviderDetailsScreen}
+        options={{ title: "Provider Details" }}
       />
     </Stack.Navigator>
   );

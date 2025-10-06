@@ -16,8 +16,12 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
       "SELECT name FROM _migrations WHERE name = ?",
       [name]
     );
-    if (row) return;
+    if (row) {
+      console.log(`[migration] ${name} already applied`);
+      return;
+    }
 
+    console.log(`[migration] Applying ${name}...`);
     db.execSync("BEGIN");
     try {
       db.execSync(sql);
@@ -26,7 +30,9 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
         [name, new Date().toISOString()]
       );
       db.execSync("COMMIT");
+      console.log(`[migration] ${name} completed successfully`);
     } catch (e) {
+      console.error(`[migration] ${name} failed:`, e);
       db.execSync("ROLLBACK");
       throw e;
     }
@@ -120,6 +126,96 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
 
     CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
     CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
+    `
+  );
+
+  // 005 - providers and event_providers
+  apply(
+    "005_providers",
+    `
+    CREATE TABLE IF NOT EXISTS providers (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      logoUrl TEXT,
+      website TEXT
+    );
+
+    -- Drop and recreate event_providers table to ensure correct schema
+    DROP TABLE IF EXISTS event_providers;
+    
+    CREATE TABLE event_providers (
+      eventId TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      providerId TEXT NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+      PRIMARY KEY (eventId, providerId)
+    );
+
+    CREATE INDEX idx_event_providers_event ON event_providers(eventId);
+    CREATE INDEX idx_event_providers_provider ON event_providers(providerId);
+
+    -- Insert some sample providers
+    INSERT OR IGNORE INTO providers (id, name, logoUrl, website) VALUES
+      ('spartan', 'Spartan Race', '', 'https://www.spartan.com'),
+      ('ironman', 'IRONMAN', '', 'https://www.ironman.com'),
+      ('marathon', 'Marathon Events', '', 'https://www.marathon.com');
+    `
+  );
+
+  // 006 - provider_follows
+  apply(
+    "006_provider_follows",
+    `
+    -- Drop table if it exists to ensure clean creation
+    DROP TABLE IF EXISTS provider_follows;
+    
+    CREATE TABLE provider_follows (
+      userId TEXT NOT NULL,
+      providerId TEXT NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (userId, providerId)
+    );
+
+    CREATE INDEX idx_provider_follows_user ON provider_follows(userId);
+    CREATE INDEX idx_provider_follows_provider ON provider_follows(providerId);
+    `
+  );
+
+  // 007 - fix event_providers schema
+  apply(
+    "007_fix_event_providers_schema",
+    `
+    -- Drop and recreate event_providers table with correct schema
+    DROP TABLE IF EXISTS event_providers;
+    
+    CREATE TABLE event_providers (
+      eventId TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      providerId TEXT NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+      PRIMARY KEY (eventId, providerId)
+    );
+
+    CREATE INDEX idx_event_providers_event ON event_providers(eventId);
+    CREATE INDEX idx_event_providers_provider ON event_providers(providerId);
+    `
+  );
+
+  // 008 - fix providers table schema
+  apply(
+    "008_fix_providers_schema",
+    `
+    -- Drop and recreate providers table with correct schema
+    DROP TABLE IF EXISTS providers;
+    
+    CREATE TABLE providers (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      logoUrl TEXT,
+      website TEXT
+    );
+
+    -- Re-insert sample providers
+    INSERT INTO providers (id, name, logoUrl, website) VALUES
+      ('spartan', 'Spartan Race', '', 'https://www.spartan.com'),
+      ('ironman', 'IRONMAN', '', 'https://www.ironman.com'),
+      ('marathon', 'Marathon Events', '', 'https://www.marathon.com');
     `
   );
 }

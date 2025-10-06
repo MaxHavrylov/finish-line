@@ -26,7 +26,7 @@ import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/nativ
 import { Ionicons } from "@expo/vector-icons";
 
 import { EventSummary, EventCategory } from "../types/events";
-import { seedMockIfEmpty, getEvents } from "../repositories/eventsRepo";
+import { seedMockIfEmpty, getEvents, listSummaries } from "../repositories/eventsRepo";
 import { syncEvents } from "../sync/eventsSync";
 import { isWithinDays } from "../utils/date";
 import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
@@ -137,8 +137,18 @@ export default function DiscoverScreen() {
   const [distOpen, setDistOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const data = await getEvents();
-    setEvents(data);
+    try {
+      // Try the new listSummaries function which has fallback logic
+      const data = await listSummaries();
+      console.log('[DiscoverScreen] Loaded events:', data.length);
+      setEvents(data);
+    } catch (error) {
+      console.warn('[DiscoverScreen] Error loading events:', error);
+      // Fallback to getEvents if listSummaries fails
+      const data = await getEvents();
+      console.log('[DiscoverScreen] Fallback loaded events:', data.length);
+      setEvents(data);
+    }
   }, []);
 
   const loadFavorites = useCallback(async () => {
@@ -152,9 +162,15 @@ export default function DiscoverScreen() {
   useEffect(() => {
     (async () => {
       try {
+        console.log('[DiscoverScreen] Initial load starting...');
         await seedMockIfEmpty();
+        console.log('[DiscoverScreen] Mock seeding completed');
         await load();
+        console.log('[DiscoverScreen] Events loaded');
         await loadFavorites();
+        console.log('[DiscoverScreen] Favorites loaded');
+      } catch (error) {
+        console.warn('[DiscoverScreen] Error during initial load:', error);
       } finally {
         setLoading(false);
       }
@@ -182,9 +198,12 @@ export default function DiscoverScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
+      console.log('[DiscoverScreen] Refreshing data...');
       await syncEvents();
       await load();
       await loadFavorites();
+    } catch (error) {
+      console.warn('[DiscoverScreen] Error during refresh:', error);
     } finally {
       setRefreshing(false);
     }
@@ -208,8 +227,10 @@ export default function DiscoverScreen() {
     return events.filter((e) => {
       if (onlyFavorites && !favoriteIds.has(e.id)) return false;               // ⭐ favorites
       if (selectedCategories.length > 0 && !selectedCategories.includes(e.eventCategory)) return false;
-      if (dateFilter === "30d" && !isWithinDays(e.startDate, 30)) return false;
-      if (dateFilter === "90d" && !isWithinDays(e.startDate, 90)) return false;
+      if (dateFilter !== "Any") {
+        if (dateFilter === "30d" && !isWithinDays(e.startDate, 30)) return false;
+        if (dateFilter === "90d" && !isWithinDays(e.startDate, 90)) return false;
+      }
       if (locationText.trim()) {
         const hay = `${e.city ?? ""} ${e.country ?? ""}`.toLowerCase();
         if (!hay.includes(locationText.trim().toLowerCase())) return false;
@@ -426,6 +447,15 @@ export default function DiscoverScreen() {
                       textStyle={{ fontWeight: "600" }}
                     >
                       {e.minDistanceLabel}
+                    </Chip>
+                  ) : null}
+                  {e.providerName ? (
+                    <Chip
+                      style={[styles.tagChip, { backgroundColor: theme.colors.surfaceVariant }]}
+                      textStyle={{ fontWeight: "500" }}
+                      testID="chip-provider"
+                    >
+                      {e.providerName}
                     </Chip>
                   ) : null}
                 </View>

@@ -14,5 +14,13 @@ export async function syncEvents(): Promise<void> {
   const events = await api.listEvents(since ? { since } : undefined);
   upsertEvents(events);
 
+  // Dev-only: seed event_providers if empty
+  if (__DEV__ && events.length > 0) {
+    const { providersRepo } = await import('../repositories/providersRepo');
+    const eventIds = events.slice(0, 3).map(e => e.id);
+    const providerIds = ['spartan', 'ironman', 'marathon']; // Example provider IDs
+    await providersRepo.seedEventProvidersIfEmpty(eventIds, providerIds);
+  }
+
   await setItem(META_LAST_SYNC, new Date().toISOString());
 }
