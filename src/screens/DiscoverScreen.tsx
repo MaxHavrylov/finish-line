@@ -428,15 +428,6 @@ export default function DiscoverScreen() {
                       {e.minDistanceLabel}
                     </Chip>
                   ) : null}
-                  {e.providerName ? (
-                    <Chip
-                      style={[styles.tagChip, { backgroundColor: theme.colors.secondaryContainer }]}
-                      textStyle={{ fontWeight: "600" }}
-                      testID="chip-provider"
-                    >
-                      {e.providerName}
-                    </Chip>
-                  ) : null}
                 </View>
               </Card.Content>
             </Card>
