@@ -13,10 +13,6 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": [
-      "react",
-      "react-native"
-    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -25,7 +21,10 @@
     }
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/setupTests.ts"
   ],
   "extends": "expo/tsconfig.base"
 }

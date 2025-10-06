@@ -12,6 +12,8 @@ import { getEventById } from "@/repositories/eventsRepo";
 import { isFavorite, toggleFavorite } from "@/repositories/favoritesRepo";
 import { buildICS, saveAndShareICS, ensureCalendarAccess, createEvent } from '@/utils/calendar';
 import * as userRacesRepo from "@/repositories/userRacesRepo";
+import { providersRepo } from "@/repositories/providersRepo";
+import { Provider } from "@/data/mockProviders";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -26,6 +28,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   // UI state
   const [details, setDetails] = useState<EventDetails | null>(null);
   const [fav, setFav] = useState<boolean>(false);
+  const [provider, setProvider] = useState<Provider | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -46,15 +49,17 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   useEffect(() => {
     mounted.current = true;
     (async () => {
-      const [d, f, r] = await Promise.all([
+      const [d, f, r, p] = await Promise.all([
         getEventById(event.id),
         isFavorite(event.id),
-        userRacesRepo.getByEventId(event.id)
+        userRacesRepo.getByEventId(event.id),
+        providersRepo.getProviderByEventId(event.id)
       ]);
       if (mounted.current) {
         if (d) setDetails(d);
         setFav(f);
         setRaceRecord(r);
+        setProvider(p);
       }
     })();
     return () => { mounted.current = false; };
@@ -328,6 +333,31 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           <Card.Content>
             <Text>Date: {new Date(event.date).toLocaleString()}</Text>
             <Text>Category: {event.category}</Text>
+
+            {provider && (
+              <>
+                <Divider style={{ marginVertical: 8 }} />
+                <View style={styles.providerSection} testID="provider-block">
+                  <Text variant="titleMedium">Event Organizer</Text>
+                  <View style={styles.providerContainer}>
+                    <View style={styles.providerInfo}>
+                      <Text variant="titleSmall">{provider.name}</Text>
+                    </View>
+                    {provider.website && (
+                      <Button
+                        mode="contained"
+                        compact
+                        onPress={() => Linking.openURL(provider.website)}
+                        testID="btn-provider-website"
+                      >
+                        {t('actions.website')}
+                      </Button>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+
             <Divider style={{ marginVertical: 8 }} />
             <Text variant="titleMedium">Available Distances</Text>
             <View style={styles.row}>
@@ -491,5 +521,18 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minWidth: 100
+  },
+  // Provider styles
+  providerSection: {
+    marginVertical: 8,
+  },
+  providerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  providerInfo: {
+    flex: 1,
   }
 });
