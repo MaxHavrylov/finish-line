@@ -66,5 +66,14 @@
   "enterResultTitle": "Zadat výsledek závodu",
   "resultTime": "Čas výsledku",
   "noResultsYet": "Zatím žádné minulé výsledky",
-  "addYourFirstResult": "Dokončete závod a přidejte svůj výsledek!"
+  "addYourFirstResult": "Dokončete závod a přidejte svůj výsledek!",
+  "compareVsFriends": "Porovnat s přáteli",
+  "hideComparison": "Skrýt porovnání",
+  "friendsResults": "Výsledky přátel",
+  "yourPerformance": "Váš výkon",
+  "vsBestFriend": "vs nejlepší přítel:",
+  "vsMedian": "vs medián:",
+  "vsSlowest": "vs nejpomalejší:",
+  "noFriendsCompleted": "Žádní přátelé zatím nedokončili tuto událost",
+  "loadingComparisons": "Načítání porovnání..."
 }

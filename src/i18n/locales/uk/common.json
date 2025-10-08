@@ -61,5 +61,14 @@
   "enterResultTitle": "Ввести результат забігу",
   "resultTime": "Час результату",
   "noResultsYet": "Поки немає минулих результатів",
-  "addYourFirstResult": "Завершіть забіг і додайте свій результат!"
+  "addYourFirstResult": "Завершіть забіг і додайте свій результат!",
+  "compareVsFriends": "Порівняти з друзями",
+  "hideComparison": "Сховати порівняння",
+  "friendsResults": "Результати друзів",
+  "yourPerformance": "Ваш результат",
+  "vsBestFriend": "проти найкращого друга:",
+  "vsMedian": "проти медіани:",
+  "vsSlowest": "проти найповільнішого:",
+  "noFriendsCompleted": "Жоден з друзів ще не завершив цю подію",
+  "loadingComparisons": "Завантаження порівнянь..."
 }

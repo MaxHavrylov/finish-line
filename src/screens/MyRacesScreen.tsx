@@ -4,6 +4,8 @@ import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityI
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import * as userRacesRepo from '@/repositories/userRacesRepo';
+import { listFollowing } from '@/repositories/followsRepo';
+import { resultsRepo, type FriendResult } from '@/repositories/resultsRepo';
 import type { FutureUserRace, PastUserRace } from '@/types/events';
 
 type PastRaceWithMeta = PastUserRace & { 
@@ -40,6 +42,11 @@ export default function MyRacesScreen() {
   const [resultSeconds, setResultSeconds] = useState('');
   const [resultNote, setResultNote] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Comparison states
+  const [expandedRaceId, setExpandedRaceId] = useState<string | null>(null);
+  const [friendsResults, setFriendsResults] = useState<{ [eventId: string]: FriendResult[] }>({});
+  const [loadingComparisons, setLoadingComparisons] = useState<{ [eventId: string]: boolean }>({});
   
   // Responsive layout threshold
   const isNarrow = width < 600;
@@ -108,6 +115,47 @@ export default function MyRacesScreen() {
     }
   }, [selectedRace, resultHours, resultMinutes, resultSeconds, loadData]);
 
+  // Comparison functions
+  const loadFriendsResults = useCallback(async (eventId: string) => {
+    if (friendsResults[eventId] || loadingComparisons[eventId]) {
+      return; // Already loaded or loading
+    }
+
+    setLoadingComparisons(prev => ({ ...prev, [eventId]: true }));
+    
+    try {
+      const followingIds = await listFollowing('me');
+      const results = await resultsRepo.getFriendsResults(eventId, followingIds);
+      setFriendsResults(prev => ({ ...prev, [eventId]: results }));
+    } catch (error) {
+      console.warn('Failed to load friends results:', error);
+    } finally {
+      setLoadingComparisons(prev => ({ ...prev, [eventId]: false }));
+    }
+  }, [friendsResults, loadingComparisons]);
+
+  const handleToggleExpand = useCallback(async (race: PastRaceWithMeta) => {
+    if (expandedRaceId === race.id) {
+      setExpandedRaceId(null);
+    } else {
+      setExpandedRaceId(race.id);
+      await loadFriendsResults(race.eventId);
+    }
+  }, [expandedRaceId, loadFriendsResults]);
+
+  const formatTimeDelta = useCallback((deltaSeconds: number): string => {
+    const absSeconds = Math.abs(deltaSeconds);
+    const sign = deltaSeconds >= 0 ? '+' : '-';
+    const hours = Math.floor(absSeconds / 3600);
+    const minutes = Math.floor((absSeconds % 3600) / 60);
+    const seconds = absSeconds % 60;
+    
+    if (hours > 0) {
+      return `${sign}${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${sign}${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+
   // Utility function to format time
   const formatTime = useCallback((seconds: number): string => {
     const h = Math.floor(seconds / 3600);
@@ -147,39 +195,146 @@ export default function MyRacesScreen() {
     </Card>
   ), [handleAddResult, t]);
 
-  const renderPastRace = useCallback(({ item }: { item: PastRaceWithMeta }) => (
-    <Card style={styles.raceCard}>
-      <Card.Content>
-        <View style={styles.pastRaceHeader}>
-          <Text variant="titleMedium" style={{ flex: 1 }}>{item.title}</Text>
-          {item.isPR && (
-            <Chip
-              mode="flat"
-              textStyle={{ fontSize: 12, fontWeight: 'bold' }}
-              style={[styles.prChip, { backgroundColor: theme.colors.primaryContainer }]}
-              testID="chip-pr"
-            >
-              {t('personalRecord')}
-            </Chip>
+  const renderPastRace = useCallback(({ item }: { item: PastRaceWithMeta }) => {
+    const isExpanded = expandedRaceId === item.id;
+    const eventResults = friendsResults[item.eventId] || [];
+    const isLoadingComparison = loadingComparisons[item.eventId];
+
+    return (
+      <Card style={styles.raceCard}>
+        <Card.Content>
+          <View style={styles.pastRaceHeader}>
+            <Text variant="titleMedium" style={{ flex: 1 }}>{item.title}</Text>
+            {item.isPR && (
+              <Chip
+                mode="flat"
+                textStyle={{ fontSize: 12, fontWeight: 'bold' }}
+                style={[styles.prChip, { backgroundColor: theme.colors.primaryContainer }]}
+                testID="chip-pr"
+              >
+                {t('personalRecord')}
+              </Chip>
+            )}
+          </View>
+          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+            {item.minDistanceLabel && `${item.minDistanceLabel} • `}
+            {item.eventCategory}
+          </Text>
+          {item.resultTimeSeconds && (
+            <Text variant="titleSmall" style={{ marginTop: 8, color: theme.colors.primary }}>
+              {t('resultTime')}: {formatTime(item.resultTimeSeconds)}
+            </Text>
           )}
-        </View>
-        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
-          {item.minDistanceLabel && `${item.minDistanceLabel} • `}
-          {item.eventCategory}
-        </Text>
-        {item.resultTimeSeconds && (
-          <Text variant="titleSmall" style={{ marginTop: 8, color: theme.colors.primary }}>
-            {t('resultTime')}: {formatTime(item.resultTimeSeconds)}
-          </Text>
+          {item.note && (
+            <Text variant="bodySmall" style={{ marginTop: 4, fontStyle: 'italic' }}>
+              {item.note}
+            </Text>
+          )}
+        </Card.Content>
+
+        <Card.Actions>
+          <Button
+            mode="text"
+            onPress={() => handleToggleExpand(item)}
+            icon={isExpanded ? 'chevron-up' : 'chevron-down'}
+          >
+            {isExpanded ? 'Hide Comparison' : 'Compare vs Friends'}
+          </Button>
+        </Card.Actions>
+
+        {isExpanded && (
+          <Card.Content style={styles.comparisonContainer} testID="result-compare">
+            {isLoadingComparison ? (
+              <View style={styles.comparisonLoading}>
+                <ActivityIndicator size="small" />
+                <Text variant="bodySmall" style={{ marginLeft: 8 }}>Loading comparisons...</Text>
+              </View>
+            ) : eventResults.length > 0 ? (
+              <View>
+                <Text variant="titleSmall" style={{ marginBottom: 12 }}>Friends' Results</Text>
+                
+                {/* Friends' times */}
+                {eventResults.map((result, index) => (
+                  <View key={result.userId} style={styles.friendResultRow}>
+                    <Text variant="bodyMedium" style={{ flex: 1 }}>
+                      {index + 1}. {result.userName}
+                    </Text>
+                    <Text variant="bodyMedium" style={{ fontWeight: '600' }}>
+                      {formatTime(result.resultTimeSeconds)}
+                    </Text>
+                  </View>
+                ))}
+
+                {/* Comparison deltas */}
+                {item.resultTimeSeconds && (() => {
+                  const friendTimes = eventResults.map(r => r.resultTimeSeconds);
+                  const comparisons = resultsRepo.calculateComparisons(item.resultTimeSeconds, friendTimes);
+                  
+                  return (
+                    <View style={styles.deltaContainer}>
+                      <Text variant="titleSmall" style={{ marginBottom: 8, marginTop: 16 }}>Your Performance</Text>
+                      
+                      <View style={styles.deltaRow} testID="result-delta-best">
+                        <Text variant="bodyMedium">vs Best Friend:</Text>
+                        <Text 
+                          variant="bodyMedium" 
+                          style={{ 
+                            fontWeight: '600',
+                            color: comparisons.vsBest <= 0 ? theme.colors.primary : theme.colors.error
+                          }}
+                        >
+                          {formatTimeDelta(comparisons.vsBest)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.deltaRow} testID="result-delta-median">
+                        <Text variant="bodyMedium">vs Median:</Text>
+                        <Text 
+                          variant="bodyMedium" 
+                          style={{ 
+                            fontWeight: '600',
+                            color: comparisons.vsMedian <= 0 ? theme.colors.primary : theme.colors.error
+                          }}
+                        >
+                          {formatTimeDelta(comparisons.vsMedian)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.deltaRow} testID="result-delta-last">
+                        <Text variant="bodyMedium">vs Slowest:</Text>
+                        <Text 
+                          variant="bodyMedium" 
+                          style={{ 
+                            fontWeight: '600',
+                            color: comparisons.vsLast <= 0 ? theme.colors.primary : theme.colors.error
+                          }}
+                        >
+                          {formatTimeDelta(comparisons.vsLast)}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })()}
+              </View>
+            ) : (
+              <Text variant="bodyMedium" style={{ fontStyle: 'italic', opacity: 0.7 }}>
+                No friends completed this event yet
+              </Text>
+            )}
+          </Card.Content>
         )}
-        {item.note && (
-          <Text variant="bodySmall" style={{ marginTop: 4, fontStyle: 'italic' }}>
-            {item.note}
-          </Text>
-        )}
-      </Card.Content>
-    </Card>
-  ), [formatTime, t, theme.colors]);
+      </Card>
+    );
+  }, [
+    expandedRaceId, 
+    friendsResults, 
+    loadingComparisons, 
+    handleToggleExpand, 
+    formatTime, 
+    formatTimeDelta, 
+    t, 
+    theme.colors
+  ]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -408,5 +563,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 12
+  },
+  comparisonContainer: {
+    paddingTop: 0,
+    marginTop: -8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)'
+  },
+  comparisonLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16
+  },
+  friendResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4
+  },
+  deltaContainer: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8
+  },
+  deltaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4
   }
 });

@@ -61,5 +61,14 @@
   "enterResultTitle": "Enter Race Result",
   "resultTime": "Result Time",
   "noResultsYet": "No past results yet",
-  "addYourFirstResult": "Complete a race and add your result!"
+  "addYourFirstResult": "Complete a race and add your result!",
+  "compareVsFriends": "Compare vs Friends",
+  "hideComparison": "Hide Comparison",
+  "friendsResults": "Friends' Results",
+  "yourPerformance": "Your Performance",
+  "vsBestFriend": "vs Best Friend:",
+  "vsMedian": "vs Median:",
+  "vsSlowest": "vs Slowest:",
+  "noFriendsCompleted": "No friends completed this event yet",
+  "loadingComparisons": "Loading comparisons..."
 }
