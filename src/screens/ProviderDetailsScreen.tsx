@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, Linking } from "react-native";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { View, StyleSheet, FlatList, Linking, RefreshControl } from "react-native";
 import { 
-  Card, Text, Button, ActivityIndicator, useTheme, Divider, Chip
+  Card, Text, Button, ActivityIndicator, useTheme, Divider, Chip, TextInput, SegmentedButtons
 } from "react-native-paper";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -26,7 +26,11 @@ type ProviderWithEvents = {
     coverImage?: string;
     minDistanceLabel?: string;
   }>;
+  total?: number;
 };
+
+type DateWindow = 'ANY' | '30D' | '90D';
+type SortOption = 'SOONEST' | 'LATEST';
 
 export default function ProviderDetailsScreen() {
   const theme = useTheme();
@@ -39,29 +43,110 @@ export default function ProviderDetailsScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
 
-  const loadProviderData = useCallback(async () => {
+  // Filter states
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [dateWindow, setDateWindow] = useState<DateWindow>('ANY');
+  const [sortOption, setSortOption] = useState<SortOption>('SOONEST');
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  const loadProviderData = useCallback(async (
+    page: number = 1, 
+    isRefresh: boolean = false, 
+    append: boolean = false
+  ) => {
     try {
-      setLoading(true);
+      if (page === 1) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
+
+      const params = {
+        page,
+        pageSize: 20,
+        search: debouncedSearch,
+        dateWindow,
+        sort: sortOption
+      };
+
       const [data, following] = await Promise.all([
-        providersRepo.listEventsByProvider(providerId, { page: 1, pageSize: 50 }),
-        providersRepo.isFollowing('me', providerId)
+        providersRepo.listEventsByProvider(providerId, params),
+        page === 1 ? providersRepo.isFollowing('me', providerId) : Promise.resolve(isFollowing)
       ]);
-      setProviderData(data);
-      setIsFollowing(following);
+
+      if (page === 1) {
+        setProviderData(data);
+        setCurrentPage(1);
+      } else if (append && providerData) {
+        setProviderData(prev => prev ? {
+          ...prev,
+          events: [...prev.events, ...data.events],
+          total: data.total
+        } : data);
+        setCurrentPage(page);
+      }
+
+      // Check if there are more pages
+      const totalLoaded = page === 1 ? data.events.length : (providerData?.events.length || 0) + data.events.length;
+      setHasMorePages(data.total ? totalLoaded < data.total : data.events.length === 20);
+
+      if (page === 1) {
+        setIsFollowing(following);
+      }
     } catch (err) {
       console.warn('Failed to load provider data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load provider data');
+      setError(err instanceof Error ? err.message : t('providerErrorText'));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+      setRefreshing(false);
     }
-  }, [providerId]);
+  }, [providerId, debouncedSearch, dateWindow, sortOption, isFollowing, providerData, t]);
 
   useEffect(() => {
-    loadProviderData();
+    loadProviderData(1, false, false);
+  }, [debouncedSearch, dateWindow, sortOption, providerId]);
+
+  const handleRefresh = useCallback(() => {
+    loadProviderData(1, true, false);
   }, [loadProviderData]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMorePages && providerData) {
+      loadProviderData(currentPage + 1, false, true);
+    }
+  }, [loadingMore, hasMorePages, providerData, currentPage, loadProviderData]);
+
+  // Filter options
+  const dateOptions = useMemo(() => [
+    { label: t('any'), value: 'ANY' as DateWindow },
+    { label: t('days30'), value: '30D' as DateWindow },
+    { label: t('days90'), value: '90D' as DateWindow }
+  ], [t]);
+
+  const sortOptions = useMemo(() => [
+    { label: t('soonest'), value: 'SOONEST' as SortOption },
+    { label: t('latest'), value: 'LATEST' as SortOption }
+  ], [t]);
 
   const handleToggleFollow = useCallback(async () => {
     if (!providerData) return;
@@ -102,6 +187,7 @@ export default function ProviderDetailsScreen() {
               disabled={followLoading}
               testID="btn-follow-provider"
               style={{ marginRight: 8 }}
+              accessibilityLabel={t(isFollowing ? 'unfollowProvider' : 'followProvider')}
             >
               {t(isFollowing ? 'unfollowProvider' : 'followProvider')}
             </Button>
@@ -112,8 +198,9 @@ export default function ProviderDetailsScreen() {
                 onPress={() => providerData.website && Linking.openURL(providerData.website)}
                 testID="btn-provider-website"
                 style={{ marginRight: 8 }}
+                accessibilityLabel={t('website')}
               >
-                {t('actions.website')}
+                {t('website')}
               </Button>
             )}
           </View>
@@ -174,13 +261,70 @@ export default function ProviderDetailsScreen() {
     );
   }, [navigation, theme]);
 
+  const renderFilters = useCallback(() => (
+    <View style={styles.filtersContainer}>
+      <TextInput
+        mode="outlined"
+        placeholder={t('search')}
+        value={searchText}
+        onChangeText={setSearchText}
+        style={styles.searchInput}
+        testID="provider-search"
+        accessibilityLabel={t('search')}
+      />
+      
+      <View style={styles.filterRow}>
+        <View style={styles.dateFilterContainer} testID="provider-date-filter">
+          {dateOptions.map((option) => (
+            <Chip
+              key={option.value}
+              mode={dateWindow === option.value ? 'flat' : 'outlined'}
+              selected={dateWindow === option.value}
+              onPress={() => setDateWindow(option.value)}
+              style={[
+                styles.filterChip,
+                dateWindow === option.value && { backgroundColor: theme.colors.primaryContainer }
+              ]}
+              textStyle={dateWindow === option.value ? { color: theme.colors.onPrimaryContainer } : undefined}
+            >
+              {option.label}
+            </Chip>
+          ))}
+        </View>
+
+        <View style={styles.sortContainer} testID="provider-sort">
+          <SegmentedButtons
+            value={sortOption}
+            onValueChange={(value) => setSortOption(value as SortOption)}
+            buttons={sortOptions.map(option => ({
+              value: option.value,
+              label: option.label
+            }))}
+            style={styles.segmentedButtons}
+          />
+        </View>
+      </View>
+    </View>
+  ), [searchText, t, dateOptions, dateWindow, theme.colors, sortOption, sortOptions]);
+
+  const renderListFooter = useCallback(() => {
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" />
+        </View>
+      );
+    }
+    return null;
+  }, [loadingMore]);
+
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
+    <View style={styles.emptyState} testID="provider-empty">
       <Text variant="titleMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
-        No Events Found
+        {t('providerNoEventsTitle')}
       </Text>
       <Text style={{ textAlign: 'center', opacity: 0.7 }}>
-        This provider doesn't have any events yet.
+        {t('providerNoEvents')}
       </Text>
     </View>
   );
@@ -189,37 +333,47 @@ export default function ProviderDetailsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>Loading provider details...</Text>
+        <Text style={{ marginTop: 16 }}>{t('loadingProvider')}</Text>
       </View>
     );
   }
 
   if (error || !providerData) {
     return (
-      <View style={styles.errorContainer}>
+      <View style={styles.errorContainer} testID="provider-error">
         <Text variant="titleMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
-          Error Loading Provider
+          {t('providerErrorTitle')}
         </Text>
         <Text style={{ textAlign: 'center', opacity: 0.7, marginBottom: 16 }}>
-          {error || 'Provider not found'}
+          {error || t('providerErrorText')}
         </Text>
-        <Button mode="contained" onPress={loadProviderData}>
-          Try Again
+        <Button mode="contained" onPress={() => loadProviderData(1, false, false)}>
+          {t('tryAgain')}
         </Button>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="provider-header">
+      {renderFilters()}
       <FlatList
         data={providerData.events}
         renderItem={renderEvent}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmptyState}
+        ListFooterComponent={renderListFooter}
         ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
         contentContainerStyle={styles.listContent}
         testID="provider-events-list"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.3}
       />
     </View>
   );
@@ -263,5 +417,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
+  },
+  filtersContainer: {
+    padding: 16,
+    backgroundColor: 'transparent',
+  },
+  searchInput: {
+    marginBottom: 12,
+  },
+  filterRow: {
+    gap: 12,
+  },
+  dateFilterContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  filterChip: {
+    marginBottom: 4,
+  },
+  sortContainer: {
+    flex: 1,
+  },
+  segmentedButtons: {
+    maxWidth: 300,
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });

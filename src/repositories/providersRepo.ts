@@ -61,11 +61,39 @@ export const providersRepo = {
   },
 
   /**
-   * List events by provider with pagination
+   * List events by provider with pagination and filters
    */
-  async listEventsByProvider(providerId: string, options?: { page?: number; pageSize?: number }): Promise<{ id: string; name: string; logoUrl?: string; website?: string; events: any[] }> {
+  async listEventsByProvider(providerId: string, params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    dateWindow?: 'ANY' | '30D' | '90D';
+    sort?: 'SOONEST' | 'LATEST';
+  }): Promise<{
+    id: string;
+    name: string;
+    logoUrl?: string;
+    website?: string;
+    events: Array<{
+      id: string;
+      title: string;
+      startDate: string;
+      city?: string;
+      country?: string;
+      eventCategory: string;
+      coverImage?: string;
+      minDistanceLabel?: string;
+    }>;
+    total?: number;
+  }> {
     const database = getDb();
-    const { page = 1, pageSize = 20 } = options || {};
+    const { 
+      page = 1, 
+      pageSize = 20, 
+      search = '', 
+      dateWindow = 'ANY', 
+      sort = 'SOONEST' 
+    } = params || {};
     const offset = (page - 1) * pageSize;
 
     // Get provider info
@@ -83,22 +111,69 @@ export const providersRepo = {
       throw new Error(`Provider with id ${providerId} not found`);
     }
 
+    // Build query conditions
+    let whereConditions = 'ep.providerId = ? AND e.deleted_at IS NULL';
+    const queryParams: any[] = [providerId];
+
+    // Add search filter
+    if (search.trim()) {
+      whereConditions += ' AND (e.title LIKE ? OR e.city LIKE ? OR e.country LIKE ?)';
+      const searchPattern = `%${search.trim()}%`;
+      queryParams.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    // Add date window filter
+    if (dateWindow !== 'ANY') {
+      const now = new Date();
+      let dateThreshold: Date;
+      
+      if (dateWindow === '30D') {
+        dateThreshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      } else { // 90D
+        dateThreshold = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+      }
+      
+      whereConditions += ' AND datetime(e.start_date) BETWEEN datetime(?) AND datetime(?)';
+      queryParams.push(now.toISOString(), dateThreshold.toISOString());
+    }
+
+    // Add sort order
+    const sortOrder = sort === 'LATEST' ? 'DESC' : 'ASC';
+
+    // Get total count for pagination (optional)
+    const countResult = database.getFirstSync<{ total: number }>(
+      `SELECT COUNT(*) as total FROM events e
+       JOIN event_providers ep ON e.id = ep.eventId
+       WHERE ${whereConditions}`,
+      queryParams
+    );
+
     // Get events for this provider
-    const events = database.getAllSync<any>(
+    const events = database.getAllSync<{
+      id: string;
+      title: string;
+      startDate: string;
+      city?: string;
+      country?: string;
+      eventCategory: string;
+      coverImage?: string;
+      minDistanceLabel?: string;
+    }>(
       `SELECT e.id, e.title, e.start_date as startDate, e.city, e.country, 
               e.event_category as eventCategory, e.cover_image as coverImage,
               e.min_distance_label as minDistanceLabel
        FROM events e
        JOIN event_providers ep ON e.id = ep.eventId
-       WHERE ep.providerId = ? AND e.deleted_at IS NULL
-       ORDER BY datetime(e.start_date) ASC
+       WHERE ${whereConditions}
+       ORDER BY datetime(e.start_date) ${sortOrder}
        LIMIT ? OFFSET ?`,
-      [providerId, pageSize, offset]
+      [...queryParams, pageSize, offset]
     );
 
     return {
       ...provider,
-      events
+      events,
+      total: countResult?.total || 0
     };
   },
 

@@ -45,5 +45,16 @@
   "emptyList": "Není co zobrazit",
   "runners": "Běžci",
   "races": "Závody",
-  "prs": "Osobní rekordy"
+  "prs": "Osobní rekordy",
+  "loadingProvider": "Načítání podrobností pořadatele…",
+  "providerErrorTitle": "Chyba při načítání pořadatele",
+  "providerErrorText": "Pořadatel nebyl nalezen",
+  "tryAgain": "Zkusit znovu",
+  "providerNoEventsTitle": "Žádné události nenalezeny",
+  "providerNoEvents": "Tento pořadatel zatím nemá žádné události.",
+  "any": "Libovolné",
+  "days30": "30 dnů",
+  "days90": "90 dnů",
+  "soonest": "Nejdříve nejbližší",
+  "latest": "Nejdříve nejnovější"
 }

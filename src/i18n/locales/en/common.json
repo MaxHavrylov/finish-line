@@ -40,5 +40,16 @@
   "emptyList": "Nothing to show",
   "runners": "Runners",
   "races": "Races",
-  "prs": "PRs"
+  "prs": "PRs",
+  "loadingProvider": "Loading provider details…",
+  "providerErrorTitle": "Error Loading Provider",
+  "providerErrorText": "Provider not found",
+  "tryAgain": "Try Again",
+  "providerNoEventsTitle": "No Events Found",
+  "providerNoEvents": "This provider doesn't have any events yet.",
+  "any": "Any",
+  "days30": "30 days",
+  "days90": "90 days",
+  "soonest": "Soonest first",
+  "latest": "Latest first"
 }
