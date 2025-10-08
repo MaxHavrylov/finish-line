@@ -51,5 +51,15 @@
   "days30": "30 days",
   "days90": "90 days",
   "soonest": "Soonest first",
-  "latest": "Latest first"
+  "latest": "Latest first",
+  "addResult": "Add Result",
+  "hours": "Hours",
+  "minutes": "Minutes",
+  "seconds": "Seconds",
+  "saveResult": "Save result",
+  "personalRecord": "Personal Record",
+  "enterResultTitle": "Enter Race Result",
+  "resultTime": "Result Time",
+  "noResultsYet": "No past results yet",
+  "addYourFirstResult": "Complete a race and add your result!"
 }

@@ -56,5 +56,15 @@
   "days30": "30 dnů",
   "days90": "90 dnů",
   "soonest": "Nejdříve nejbližší",
-  "latest": "Nejdříve nejnovější"
+  "latest": "Nejdříve nejnovější",
+  "addResult": "Přidat výsledek",
+  "hours": "Hodiny",
+  "minutes": "Minuty",
+  "seconds": "Sekundy",
+  "saveResult": "Uložit výsledek",
+  "personalRecord": "Osobní rekord",
+  "enterResultTitle": "Zadat výsledek závodu",
+  "resultTime": "Čas výsledku",
+  "noResultsYet": "Zatím žádné minulé výsledky",
+  "addYourFirstResult": "Dokončete závod a přidejte svůj výsledek!"
 }

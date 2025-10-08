@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, FlatList, useWindowDimensions } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
+import * as userRacesRepo from '@/repositories/userRacesRepo';
+import type { FutureUserRace, PastUserRace } from '@/types/events';
+
+type PastRaceWithMeta = PastUserRace & { 
+  isPR?: boolean;
+  title: string;
+  minDistanceLabel?: string;
+  eventCategory: string;
+};
 
 export default function MyRacesScreen() {
   const { t } = useTranslation('common');
@@ -9,22 +19,285 @@ export default function MyRacesScreen() {
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
   
+  // Data states
+  const [futureRaces, setFutureRaces] = useState<Array<FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  }>>([]);
+  const [pastRaces, setPastRaces] = useState<PastRaceWithMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Result entry modal states
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [selectedRace, setSelectedRace] = useState<(FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  }) | null>(null);
+  const [resultHours, setResultHours] = useState('');
+  const [resultMinutes, setResultMinutes] = useState('');
+  const [resultSeconds, setResultSeconds] = useState('');
+  const [resultNote, setResultNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  
   // Responsive layout threshold
   const isNarrow = width < 600;
+
+  // Load data
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [future, past] = await Promise.all([
+        userRacesRepo.listFuture(),
+        userRacesRepo.listPastWithMeta()
+      ]);
+      setFutureRaces(future);
+      setPastRaces(past);
+    } catch (error) {
+      console.warn('Failed to load races:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  // Result entry handlers
+  const handleAddResult = useCallback((race: FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  }) => {
+    setSelectedRace(race);
+    setResultHours('');
+    setResultMinutes('');
+    setResultSeconds('');
+    setResultNote('');
+    setResultModalVisible(true);
+  }, []);
+
+  const handleSaveResult = useCallback(async () => {
+    if (!selectedRace) return;
+
+    const hours = parseInt(resultHours) || 0;
+    const minutes = parseInt(resultMinutes) || 0;
+    const seconds = parseInt(resultSeconds) || 0;
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    if (totalSeconds <= 0) return;
+
+    setSaving(true);
+    try {
+      await userRacesRepo.addResult(selectedRace.id, totalSeconds);
+      setResultModalVisible(false);
+      await loadData(); // Reload to update the lists
+    } catch (error) {
+      console.warn('Failed to save result:', error);
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedRace, resultHours, resultMinutes, resultSeconds, loadData]);
+
+  // Utility function to format time
+  const formatTime = useCallback((seconds: number): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Render items
+  const renderFutureRace = useCallback(({ item }: { item: FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  } }) => (
+    <Card style={styles.raceCard}>
+      <Card.Content>
+        <Text variant="titleMedium">{item.title || 'Unknown Event'}</Text>
+        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+          {item.minDistanceLabel && `${item.minDistanceLabel} • `}
+          {item.eventCategory}
+        </Text>
+        {item.bibNumber && (
+          <Text variant="bodySmall" style={{ marginTop: 4 }}>
+            Bib: {item.bibNumber}
+          </Text>
+        )}
+      </Card.Content>
+      <Card.Actions>
+        <Button
+          mode="contained"
+          onPress={() => handleAddResult(item)}
+          testID="btn-add-result"
+        >
+          {t('addResult')}
+        </Button>
+      </Card.Actions>
+    </Card>
+  ), [handleAddResult, t]);
+
+  const renderPastRace = useCallback(({ item }: { item: PastRaceWithMeta }) => (
+    <Card style={styles.raceCard}>
+      <Card.Content>
+        <View style={styles.pastRaceHeader}>
+          <Text variant="titleMedium" style={{ flex: 1 }}>{item.title}</Text>
+          {item.isPR && (
+            <Chip
+              mode="flat"
+              textStyle={{ fontSize: 12, fontWeight: 'bold' }}
+              style={[styles.prChip, { backgroundColor: theme.colors.primaryContainer }]}
+              testID="chip-pr"
+            >
+              {t('personalRecord')}
+            </Chip>
+          )}
+        </View>
+        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+          {item.minDistanceLabel && `${item.minDistanceLabel} • `}
+          {item.eventCategory}
+        </Text>
+        {item.resultTimeSeconds && (
+          <Text variant="titleSmall" style={{ marginTop: 8, color: theme.colors.primary }}>
+            {t('resultTime')}: {formatTime(item.resultTimeSeconds)}
+          </Text>
+        )}
+        {item.note && (
+          <Text variant="bodySmall" style={{ marginTop: 4, fontStyle: 'italic' }}>
+            {item.note}
+          </Text>
+        )}
+      </Card.Content>
+    </Card>
+  ), [formatTime, t, theme.colors]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {activeTab === 'future' ? t('emptyFuture') : t('emptyPast')}
+        {activeTab === 'future' ? t('emptyFuture') : t('noResultsYet')}
       </Text>
+      {activeTab === 'past' && (
+        <Text style={[styles.emptyText, { marginTop: 8, fontSize: 14 }]}>
+          {t('addYourFirstResult')}
+        </Text>
+      )}
     </View>
   );
+
+  const renderResultModal = () => (
+    <Portal>
+      <Modal
+        visible={resultModalVisible}
+        onDismiss={() => setResultModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
+        testID="modal-add-result"
+      >
+        <Text variant="headlineSmall" style={{ marginBottom: 16 }}>
+          {t('enterResultTitle')}
+        </Text>
+        
+        {selectedRace && (
+          <Text variant="bodyLarge" style={{ marginBottom: 24, opacity: 0.8 }}>
+            {selectedRace.title}
+          </Text>
+        )}
+
+        <View style={styles.timeInputRow}>
+          <View style={styles.timeInputContainer}>
+            <Text variant="labelMedium">{t('hours')}</Text>
+            <TextInput
+              mode="outlined"
+              value={resultHours}
+              onChangeText={setResultHours}
+              keyboardType="numeric"
+              placeholder="0"
+              style={styles.timeInput}
+            />
+          </View>
+          <View style={styles.timeInputContainer}>
+            <Text variant="labelMedium">{t('minutes')}</Text>
+            <TextInput
+              mode="outlined"
+              value={resultMinutes}
+              onChangeText={setResultMinutes}
+              keyboardType="numeric"
+              placeholder="0"
+              style={styles.timeInput}
+            />
+          </View>
+          <View style={styles.timeInputContainer}>
+            <Text variant="labelMedium">{t('seconds')}</Text>
+            <TextInput
+              mode="outlined"
+              value={resultSeconds}
+              onChangeText={setResultSeconds}
+              keyboardType="numeric"
+              placeholder="0"
+              style={styles.timeInput}
+            />
+          </View>
+        </View>
+
+        <TextInput
+          mode="outlined"
+          label={t('note')}
+          value={resultNote}
+          onChangeText={setResultNote}
+          multiline
+          numberOfLines={3}
+          style={{ marginBottom: 24 }}
+        />
+
+        <View style={styles.modalActions}>
+          <Button
+            mode="text"
+            onPress={() => setResultModalVisible(false)}
+            disabled={saving}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleSaveResult}
+            loading={saving}
+            disabled={saving}
+          >
+            {t('saveResult')}
+          </Button>
+        </View>
+      </Modal>
+    </Portal>
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" />
+        <Text style={{ marginTop: 16 }}>{t('loading')}</Text>
+      </View>
+    );
+  }
+
+  const currentData = activeTab === 'future' ? futureRaces : pastRaces;
+  const renderItem = activeTab === 'future' ? renderFutureRace : renderPastRace;
 
   return (
     <View style={[
       styles.container,
       { flexDirection: isNarrow ? 'column' : 'row' }
     ]}>
+      {renderResultModal()}
+      
       {/* Tabs */}
       <View style={[
         styles.tabsContainer,
@@ -59,10 +332,12 @@ export default function MyRacesScreen() {
       <View style={styles.content}>
         <FlatList
           testID={activeTab === 'future' ? 'list-future' : 'list-past'}
-          data={[]}
-          renderItem={() => null}
+          data={currentData}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         />
       </View>
     </View>
@@ -84,7 +359,8 @@ const styles = StyleSheet.create({
     flex: 1
   },
   listContent: {
-    flexGrow: 1
+    flexGrow: 1,
+    padding: 16
   },
   emptyContainer: {
     flex: 1,
@@ -94,5 +370,43 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     opacity: 0.7
+  },
+  raceCard: {
+    marginBottom: 8,
+    borderRadius: 12,
+    elevation: 2
+  },
+  pastRaceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  prChip: {
+    paddingHorizontal: 8,
+    height: 28
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 24,
+    margin: 16,
+    borderRadius: 16,
+    maxHeight: '80%'
+  },
+  timeInputRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16
+  },
+  timeInputContainer: {
+    flex: 1,
+    gap: 4
+  },
+  timeInput: {
+    textAlign: 'center'
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12
   }
 });

@@ -52,20 +52,32 @@ export async function saveFutureRace(
   }
 }
 
-export async function listFuture(): Promise<FutureUserRace[]> {
+export async function listFuture(): Promise<Array<FutureUserRace & {
+  title: string;
+  minDistanceLabel?: string;
+  eventCategory: string;
+}>> {
   const db = getDb();
-  return db.getAllSync<FutureUserRace>(
+  return db.getAllSync<FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  }>(
     `SELECT 
-      id,
-      event_id as eventId,
-      bib_number as bibNumber,
-      wave_number as waveNumber,
-      start_time_local as startTimeLocal,
-      target_time_minutes as targetTimeMinutes,
-      note
-     FROM user_races 
-     WHERE status = 'FUTURE'
-     ORDER BY start_time_local ASC NULLS LAST, created_at DESC`
+      ur.id,
+      ur.event_id as eventId,
+      ur.bib_number as bibNumber,
+      ur.wave_number as waveNumber,
+      ur.start_time_local as startTimeLocal,
+      ur.target_time_minutes as targetTimeMinutes,
+      ur.note,
+      e.title,
+      e.min_distance_label as minDistanceLabel,
+      e.event_category as eventCategory
+     FROM user_races ur
+     JOIN events e ON ur.event_id = e.id
+     WHERE ur.status = 'FUTURE'
+     ORDER BY ur.start_time_local ASC NULLS LAST, ur.created_at DESC`
   );
 }
 
@@ -152,4 +164,72 @@ export async function getByEventId(
      LIMIT 1`,
     [eventId]
   ) ?? null;
+}
+
+export async function addResult(id: string, resultTimeSeconds: number): Promise<void> {
+  const db = getDb();
+  try {
+    db.execSync("BEGIN");
+    db.runSync(
+      `UPDATE user_races 
+       SET status = 'PAST', 
+           result_time_seconds = ?,
+           updated_at = ?
+       WHERE id = ?`,
+      [resultTimeSeconds, new Date().toISOString(), id]
+    );
+    db.execSync("COMMIT");
+  } catch (e) {
+    db.execSync("ROLLBACK");
+    throw new Error(`Failed to add result: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+export async function listPastWithMeta(): Promise<Array<PastUserRace & { 
+  isPR?: boolean;
+  title: string;
+  minDistanceLabel?: string;
+  eventCategory: string;
+}>> {
+  const db = getDb();
+  
+  // Get all past races with event details
+  const pastRaces = db.getAllSync<PastUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  }>(
+    `SELECT ur.id, ur.event_id as eventId, ur.status, ur.bib_number as bibNumber,
+            ur.wave_number as waveNumber, ur.start_time_local as startTimeLocal,
+            ur.target_time_minutes as targetTimeMinutes, ur.result_time_seconds as resultTimeSeconds,
+            ur.note, ur.created_at as createdAt, ur.updated_at as updatedAt,
+            e.title, e.min_distance_label as minDistanceLabel, e.event_category as eventCategory
+     FROM user_races ur
+     JOIN events e ON ur.event_id = e.id
+     WHERE ur.status = 'PAST' AND ur.result_time_seconds IS NOT NULL
+     ORDER BY ur.updated_at DESC`
+  );
+
+  if (pastRaces.length === 0) return [];
+
+  // Calculate PRs by category + distance combination
+  const prMap = new Map<string, number>();
+  
+  pastRaces.forEach(race => {
+    if (race.resultTimeSeconds) {
+      const key = `${race.eventCategory}_${race.minDistanceLabel || 'unknown'}`;
+      const current = prMap.get(key);
+      if (!current || race.resultTimeSeconds < current) {
+        prMap.set(key, race.resultTimeSeconds);
+      }
+    }
+  });
+
+  // Add isPR flag to races
+  return pastRaces.map(race => ({
+    ...race,
+    isPR: race.resultTimeSeconds ? 
+      prMap.get(`${race.eventCategory}_${race.minDistanceLabel || 'unknown'}`) === race.resultTimeSeconds : 
+      false
+  }));
 }
