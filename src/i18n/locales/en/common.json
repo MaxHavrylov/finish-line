@@ -72,5 +72,12 @@
   "noFriendsCompleted": "No friends completed this event yet",
   "loadingComparisons": "Loading comparisons...",
   "showMap": "Show Map",
-  "showList": "Show List"
+  "showList": "Show List",
+  "notifications": "Notifications",
+  "markAllRead": "Mark all read",
+  "noNotifications": "No notifications yet",
+  "notif": {
+    "followProviderTitle": "Following {{provider}}",
+    "followProviderBody": "You will receive updates about their events"
+  }
 }

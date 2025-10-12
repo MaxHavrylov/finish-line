@@ -7,6 +7,8 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { providersRepo } from "@/repositories/providersRepo";
 import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
+import { addNotification } from "@/repositories/notificationsRepo";
+import { saveFiltersDebounced, loadFilters } from "@/utils/storage";
 
 type ProviderDetailsParams = {
   providerId: string;
@@ -32,6 +34,12 @@ type ProviderWithEvents = {
 
 type DateWindow = 'ANY' | '30D' | '90D';
 type SortOption = 'SOONEST' | 'LATEST';
+
+interface ProviderFilters {
+  searchText: string;
+  dateWindow: DateWindow;
+  sortOption: SortOption;
+}
 
 export default function ProviderDetailsScreen() {
   const theme = useTheme();
@@ -63,6 +71,32 @@ export default function ProviderDetailsScreen() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchText]);
+
+  // Filter persistence
+  const getFiltersKey = useCallback(() => `provider_filters_${providerId}_v1`, [providerId]);
+
+  const loadSavedFilters = useCallback(async () => {
+    try {
+      const savedFilters = await loadFilters<ProviderFilters>(getFiltersKey());
+      if (savedFilters) {
+        console.log('[ProviderDetailsScreen] Restoring saved filters for provider:', providerId);
+        setSearchText(savedFilters.searchText || '');
+        setDateWindow(savedFilters.dateWindow || 'ANY');
+        setSortOption(savedFilters.sortOption || 'SOONEST');
+      }
+    } catch (error) {
+      console.warn('[ProviderDetailsScreen] Failed to load saved filters:', error);
+    }
+  }, [providerId, getFiltersKey]);
+
+  const saveCurrentFilters = useCallback(() => {
+    const filters: ProviderFilters = {
+      searchText,
+      dateWindow,
+      sortOption
+    };
+    saveFiltersDebounced(getFiltersKey(), filters);
+  }, [searchText, dateWindow, sortOption, getFiltersKey]);
 
   const loadProviderData = useCallback(async (
     page: number = 1, 
@@ -123,9 +157,21 @@ export default function ProviderDetailsScreen() {
     }
   }, [providerId, debouncedSearch, dateWindow, sortOption, isFollowing, providerData, t]);
 
+  // Load saved filters on mount
+  useEffect(() => {
+    loadSavedFilters();
+  }, [loadSavedFilters]);
+
   useEffect(() => {
     loadProviderData(1, false, false);
   }, [debouncedSearch, dateWindow, sortOption, providerId]);
+
+  // Save filters whenever they change (after initial load)
+  useEffect(() => {
+    if (!loading) {
+      saveCurrentFilters();
+    }
+  }, [searchText, dateWindow, sortOption, loading, saveCurrentFilters]);
 
   const handleRefresh = useCallback(() => {
     loadProviderData(1, true, false);
@@ -167,6 +213,18 @@ export default function ProviderDetailsScreen() {
         await providersRepo.follow('me', providerData.id);
         // Track successful follow
         trackProviderFollow(providerData.id);
+        
+        // Add follow notification
+        try {
+          await addNotification({
+            type: 'provider_follow',
+            title: t('common:notif.followProviderTitle', { provider: providerData.name }),
+            body: t('common:notif.followProviderBody')
+          });
+        } catch (notifError) {
+          // Silent fail for notifications
+          console.warn('Failed to add notification:', notifError);
+        }
       }
     } catch (error) {
       // Revert on error

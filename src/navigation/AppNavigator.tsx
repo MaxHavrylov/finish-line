@@ -15,6 +15,7 @@ import MyRacesScreen from "../screens/MyRacesScreen";
 import CommunityScreen from "../screens/CommunityScreen";
 import RunnerDetailsScreen from "../screens/RunnerDetailsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme as usePaperTheme } from "react-native-paper";
 
@@ -56,6 +57,24 @@ function CommunityStack() {
         name="RunnerDetails"
         component={RunnerDetailsScreen}
         options={{ title: t('viewRunner') }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function SettingsStack() {
+  const { t } = useTranslation('common');
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="SettingsList"
+        component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: t('notifications') }}
       />
     </Stack.Navigator>
   );
@@ -106,7 +125,7 @@ export default function AppNavigator() {
         />
         <Tab.Screen name="MyRaces" component={MyRacesScreen} options={{ title: t('myRaces') }} />
         <Tab.Screen name="Community" component={CommunityStack} options={{ title: t('community') }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('settings') }} />
+        <Tab.Screen name="Settings" component={SettingsStack} options={{ title: t('settings') }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

@@ -26,6 +26,7 @@ import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/nativ
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { saveFiltersDebounced, loadFilters } from "../utils/storage";
 
 import { EventSummary, EventCategory } from "../types/events";
 import { seedMockIfEmpty, getEvents, listSummaries } from "../repositories/eventsRepo";
@@ -39,6 +40,15 @@ import MapView from "../components/MapView";
 type DateFilter = "Any" | "30d" | "90d";
 type DistanceOption = "<=5" | "5-10" | ">10";
 
+interface DiscoverFilters {
+  selectedCategories: EventCategory[];
+  dateFilter: DateFilter;
+  locationText: string;
+  selectedDistances: DistanceOption[];
+  onlyFavorites: boolean;
+}
+
+const DISCOVER_FILTERS_KEY = "discover_filters_v1";
 const GREEN = "#4CAF50";
 
 const CATEGORY_OPTIONS: EventCategory[] = [
@@ -164,6 +174,34 @@ export default function DiscoverScreen() {
     setFavoriteIds(ids);
   }, []);
 
+  // Filter persistence
+  const loadSavedFilters = useCallback(async () => {
+    try {
+      const savedFilters = await loadFilters<DiscoverFilters>(DISCOVER_FILTERS_KEY);
+      if (savedFilters) {
+        console.log('[DiscoverScreen] Restoring saved filters');
+        setSelectedCategories(savedFilters.selectedCategories || []);
+        setDateFilter(savedFilters.dateFilter || "Any");
+        setLocationText(savedFilters.locationText || "");
+        setSelectedDistances(savedFilters.selectedDistances || []);
+        setOnlyFavorites(savedFilters.onlyFavorites || false);
+      }
+    } catch (error) {
+      console.warn('[DiscoverScreen] Failed to load saved filters:', error);
+    }
+  }, []);
+
+  const saveCurrentFilters = useCallback(() => {
+    const filters: DiscoverFilters = {
+      selectedCategories,
+      dateFilter,
+      locationText,
+      selectedDistances,
+      onlyFavorites
+    };
+    saveFiltersDebounced(DISCOVER_FILTERS_KEY, filters);
+  }, [selectedCategories, dateFilter, locationText, selectedDistances, onlyFavorites]);
+
 
   const route = useRoute<any>();
 
@@ -178,6 +216,10 @@ export default function DiscoverScreen() {
         await loadFavorites();
         console.log('[DiscoverScreen] Favorites loaded');
         
+        // Load saved filters
+        await loadSavedFilters();
+        console.log('[DiscoverScreen] Filters loaded');
+        
         // Load view preference
         const savedView = await AsyncStorage.getItem('discoverViewMode');
         if (savedView === 'map') {
@@ -189,7 +231,7 @@ export default function DiscoverScreen() {
         setLoading(false);
       }
     })();
-  }, [load, loadFavorites]);
+  }, [load, loadFavorites, loadSavedFilters]);
 
   // Refresh favorites if navigated back from EventDetailsScreen with favoriteChanged param or on focus
   useFocusEffect(
@@ -208,6 +250,13 @@ export default function DiscoverScreen() {
       };
     }, [])
   );
+
+  // Save filters whenever they change (after initial load)
+  useEffect(() => {
+    if (!loading) {
+      saveCurrentFilters();
+    }
+  }, [selectedCategories, dateFilter, locationText, selectedDistances, onlyFavorites, loading, saveCurrentFilters]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

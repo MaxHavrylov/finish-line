@@ -72,5 +72,12 @@
   "noFriendsCompleted": "Жоден з друзів ще не завершив цю подію",
   "loadingComparisons": "Завантаження порівнянь...",
   "showMap": "Показати карту",
-  "showList": "Показати список"
+  "showList": "Показати список",
+  "notifications": "Сповіщення",
+  "markAllRead": "Позначити все як прочитане",
+  "noNotifications": "Сповіщень поки немає",
+  "notif": {
+    "followProviderTitle": "Ви підписались на {{provider}}",
+    "followProviderBody": "Ви будете отримувати оновлення про їхні події"
+  }
 }

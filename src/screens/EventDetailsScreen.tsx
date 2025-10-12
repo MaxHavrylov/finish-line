@@ -14,6 +14,7 @@ import { buildICS, saveAndShareICS, ensureCalendarAccess, createEvent } from '@/
 import * as userRacesRepo from "@/repositories/userRacesRepo";
 import { providersRepo } from "@/repositories/providersRepo";
 import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
+import { addNotification } from "@/repositories/notificationsRepo";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -241,6 +242,18 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         await providersRepo.follow('me', provider.id);
         // Track successful follow
         trackProviderFollow(provider.id);
+        
+        // Add follow notification
+        try {
+          await addNotification({
+            type: 'provider_follow',
+            title: t('common:notif.followProviderTitle', { provider: provider.name }),
+            body: t('common:notif.followProviderBody')
+          });
+        } catch (notifError) {
+          // Silent fail for notifications
+          console.warn('Failed to add notification:', notifError);
+        }
       }
     } catch (error) {
       // Revert on error

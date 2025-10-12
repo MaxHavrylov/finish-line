@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card, Text, Switch, List, Divider } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
 import { getItem, setItem } from "@/utils/storage";
 import i18n, { 
   LANGUAGE_STORAGE_KEY, 
@@ -28,6 +29,7 @@ function RightLabel({ children }: { children: React.ReactNode }) {
 export default function SettingsScreen() {
   const { mode, setMode } = useContext(ThemeContext);
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
 
   const [language, setLanguage] = useState<LanguageCode>(SYSTEM_LANGUAGE);
   const [eventReminders, setEventReminders] = useState<boolean>(true);
@@ -148,6 +150,16 @@ export default function SettingsScreen() {
       </Text>
 
       <Card style={styles.card}>
+        <List.Item
+          style={styles.row}
+          title={t("common:notifications")}
+          description="View your notification inbox"
+          descriptionNumberOfLines={1}
+          left={(props) => <List.Icon {...props} icon="bell-outline" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate("Notifications")}
+        />
+        <Divider />
         <List.Item
           style={styles.row}
           title={t("settings:notifications.reminders.title")}

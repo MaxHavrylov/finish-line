@@ -218,4 +218,22 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
       ('marathon', 'Marathon Events', '', 'https://www.marathon.com');
     `
   );
+
+  // 009 - notifications table
+  apply(
+    "009_notifications_table",
+    `
+    CREATE TABLE notifications (
+      id TEXT PRIMARY KEY NOT NULL,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      createdAt TEXT NOT NULL,
+      read INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX idx_notifications_created ON notifications(createdAt DESC);
+    CREATE INDEX idx_notifications_read ON notifications(read);
+    `
+  );
 }
