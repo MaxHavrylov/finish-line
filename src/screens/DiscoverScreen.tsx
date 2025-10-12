@@ -24,12 +24,15 @@ import {
 } from "react-native-paper";
 import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 
 import { EventSummary, EventCategory } from "../types/events";
 import { seedMockIfEmpty, getEvents, listSummaries } from "../repositories/eventsRepo";
 import { syncEvents } from "../sync/eventsSync";
 import { isWithinDays } from "../utils/date";
 import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
+import MapView from "../components/MapView";
 
 // ---- Config / constants
 type DateFilter = "Any" | "30d" | "90d";
@@ -113,12 +116,16 @@ export default function DiscoverScreen() {
   const theme = useTheme();
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList>(null);
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showToTop, setShowToTop] = useState(false);
 
   const [events, setEvents] = useState<EventSummary[]>([]);
+  
+  // ---- view toggle
+  const [isMapView, setIsMapView] = useState(false);
 
   // ---- filters
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>([]);
@@ -169,6 +176,12 @@ export default function DiscoverScreen() {
         console.log('[DiscoverScreen] Events loaded');
         await loadFavorites();
         console.log('[DiscoverScreen] Favorites loaded');
+        
+        // Load view preference
+        const savedView = await AsyncStorage.getItem('discoverViewMode');
+        if (savedView === 'map') {
+          setIsMapView(true);
+        }
       } catch (error) {
         console.warn('[DiscoverScreen] Error during initial load:', error);
       } finally {
@@ -288,6 +301,13 @@ export default function DiscoverScreen() {
     });
   }, []);
 
+  // map/list view toggle
+  const toggleView = useCallback(async () => {
+    const newIsMapView = !isMapView;
+    setIsMapView(newIsMapView);
+    await AsyncStorage.setItem('discoverViewMode', newIsMapView ? 'map' : 'list');
+  }, [isMapView]);
+
   // labels with counts
   const typesLabel =
     selectedCategories.length > 0 ? `Race Types (${selectedCategories.length})` : "Race Types";
@@ -311,26 +331,69 @@ export default function DiscoverScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
-        ref={listRef}
-        data={dataWithFilters}
-        keyExtractor={(item, index) =>
-          ("__type" in item ? "__filters" : item.id) + "-" + index
-        }
-        ListHeaderComponent={
-          <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
-            <Text variant="headlineSmall" style={styles.headerTitle}>Discover</Text>
-            <View style={styles.headerActions}>
-              <Pressable hitSlop={8} onPress={() => {}} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <Ionicons name="notifications-outline" size={22} color={theme.colors.onSurface} style={{ marginRight: 14 }} />
-              </Pressable>
-              <Pressable hitSlop={8} onPress={() => navigation.navigate("Profile")} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-                <Ionicons name="person-circle-outline" size={26} color={theme.colors.onSurface} />
-              </Pressable>
+      {/* Header */}
+      <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
+        <Text variant="headlineSmall" style={styles.headerTitle}>Discover</Text>
+        <View style={styles.headerActions}>
+          <Pressable hitSlop={8} onPress={toggleView} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+            <Ionicons 
+              name={isMapView ? "list-outline" : "map-outline"} 
+              size={22} 
+              color={theme.colors.onSurface} 
+              style={{ marginRight: 14 }} 
+            />
+          </Pressable>
+          <Pressable hitSlop={8} onPress={() => {}} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+            <Ionicons name="notifications-outline" size={22} color={theme.colors.onSurface} style={{ marginRight: 14 }} />
+          </Pressable>
+          <Pressable hitSlop={8} onPress={() => navigation.navigate("Profile")} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+            <Ionicons name="person-circle-outline" size={26} color={theme.colors.onSurface} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Content */}
+      {isMapView ? (
+        <View style={{ flex: 1 }}>
+          <MapView 
+            events={filtered}
+            onMarkerPress={(event: EventSummary) => navigation.navigate("EventDetails", { eventId: event.id })}
+            loading={refreshing}
+          />
+          
+          {/* Filter Status */}
+          {(selectedCategories.length > 0 || dateFilter !== "Any" || locationText.trim() || selectedDistances.length > 0 || onlyFavorites) && (
+            <View style={[styles.mapFilterStatus, { backgroundColor: theme.colors.secondaryContainer }]}>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                {filtered.length} event{filtered.length !== 1 ? 's' : ''} • Filters active
+              </Text>
             </View>
+          )}
+          {/* Map View Actions */}
+          <View style={styles.mapActionsContainer}>
+            <FAB
+              icon="refresh"
+              onPress={onRefresh}
+              style={[styles.mapActionFab, { backgroundColor: theme.colors.tertiary }]}
+              color={theme.colors.onTertiary}
+              size="small"
+            />
+            <FAB
+              icon="filter-variant"
+              onPress={() => setTypeOpen(true)}
+              style={[styles.mapFiltersFab, { backgroundColor: theme.colors.secondary }]}
+              color={theme.colors.onSecondary}
+              size="medium"
+            />
           </View>
-        }
-        stickyHeaderIndices={[0]}
+        </View>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={dataWithFilters}
+          keyExtractor={(item, index) =>
+            ("__type" in item ? "__filters" : item.id) + "-" + index
+          }
         renderItem={({ item }) => {
           if ("__type" in item) {
             return (
@@ -368,18 +431,6 @@ export default function DiscoverScreen() {
                   <Pressable onPress={resetFilters} style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}>
                     <Ionicons name="filter-outline" size={16} color={GREEN} />
                     <Text style={[styles.resetText, { color: GREEN }]}>Reset Filters</Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => {}}
-                    style={({ pressed }) => [
-                      styles.mapPill,
-                      { borderColor: theme.colors.outline },
-                      pressed && { opacity: 0.85 }
-                    ]}
-                  >
-                    <Ionicons name="map-outline" size={16} color={theme.colors.onSurface} style={{ marginRight: 6 }} />
-                    <Text>Show Map</Text>
                   </Pressable>
                 </View>
 
@@ -463,14 +514,15 @@ export default function DiscoverScreen() {
             </Card>
           );
         }}
-        ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      />
+          ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingBottom: 32 }}
+        />
+      )}
 
-      {showToTop && (
+      {!isMapView && showToTop && (
         <FAB
           icon="arrow-up"
           onPress={scrollToTop}
@@ -694,6 +746,18 @@ const styles = StyleSheet.create({
 
   // FAB
   fab: { position: "absolute", right: H_PADDING, bottom: 24, elevation: 4 },
+  mapActionsContainer: { position: "absolute", right: H_PADDING, bottom: 24, gap: 12 },
+  mapFiltersFab: { elevation: 4 },
+  mapActionFab: { elevation: 4 },
+  mapFilterStatus: { 
+    position: "absolute", 
+    top: 16, 
+    left: H_PADDING, 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 16, 
+    elevation: 2 
+  },
 
   // Modals
   sheet: { marginHorizontal: H_PADDING, padding: 16, borderRadius: 16 },

@@ -75,5 +75,7 @@
   "vsMedian": "vs medián:",
   "vsSlowest": "vs nejpomalejší:",
   "noFriendsCompleted": "Žádní přátelé zatím nedokončili tuto událost",
-  "loadingComparisons": "Načítání porovnání..."
+  "loadingComparisons": "Načítání porovnání...",
+  "showMap": "Zobrazit mapu",
+  "showList": "Zobrazit seznam"
 }

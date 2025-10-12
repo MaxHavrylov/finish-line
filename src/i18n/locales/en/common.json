@@ -70,5 +70,7 @@
   "vsMedian": "vs Median:",
   "vsSlowest": "vs Slowest:",
   "noFriendsCompleted": "No friends completed this event yet",
-  "loadingComparisons": "Loading comparisons..."
+  "loadingComparisons": "Loading comparisons...",
+  "showMap": "Show Map",
+  "showList": "Show List"
 }
