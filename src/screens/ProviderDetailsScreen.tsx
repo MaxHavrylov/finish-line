@@ -6,6 +6,7 @@ import {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { providersRepo } from "@/repositories/providersRepo";
+import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
 
 type ProviderDetailsParams = {
   providerId: string;
@@ -160,8 +161,12 @@ export default function ProviderDetailsScreen() {
     try {
       if (wasFollowing) {
         await providersRepo.unfollow('me', providerData.id);
+        // Track successful unfollow
+        trackProviderUnfollow(providerData.id);
       } else {
         await providersRepo.follow('me', providerData.id);
+        // Track successful follow
+        trackProviderFollow(providerData.id);
       }
     } catch (error) {
       // Revert on error

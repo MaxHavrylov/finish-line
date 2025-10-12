@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as userRacesRepo from '@/repositories/userRacesRepo';
 import { listFollowing } from '@/repositories/followsRepo';
 import { resultsRepo, type FriendResult } from '@/repositories/resultsRepo';
+import { trackResultAdded, trackResultViewCompare } from '@/services/analytics';
 import type { FutureUserRace, PastUserRace } from '@/types/events';
 
 type PastRaceWithMeta = PastUserRace & { 
@@ -106,6 +107,10 @@ export default function MyRacesScreen() {
     setSaving(true);
     try {
       await userRacesRepo.addResult(selectedRace.id, totalSeconds);
+      
+      // Track successful result addition
+      trackResultAdded(selectedRace.eventId, totalSeconds, selectedRace.minDistanceLabel);
+      
       setResultModalVisible(false);
       await loadData(); // Reload to update the lists
     } catch (error) {
@@ -127,6 +132,9 @@ export default function MyRacesScreen() {
       const followingIds = await listFollowing('me');
       const results = await resultsRepo.getFriendsResults(eventId, followingIds);
       setFriendsResults(prev => ({ ...prev, [eventId]: results }));
+      
+      // Track successful friends comparison view
+      trackResultViewCompare(eventId, results.length);
     } catch (error) {
       console.warn('Failed to load friends results:', error);
     } finally {

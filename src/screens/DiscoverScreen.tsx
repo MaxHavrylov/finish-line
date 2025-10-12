@@ -32,6 +32,7 @@ import { seedMockIfEmpty, getEvents, listSummaries } from "../repositories/event
 import { syncEvents } from "../sync/eventsSync";
 import { isWithinDays } from "../utils/date";
 import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
+import { trackDiscoverToggleMap } from "../services/analytics";
 import MapView from "../components/MapView";
 
 // ---- Config / constants
@@ -306,6 +307,9 @@ export default function DiscoverScreen() {
     const newIsMapView = !isMapView;
     setIsMapView(newIsMapView);
     await AsyncStorage.setItem('discoverViewMode', newIsMapView ? 'map' : 'list');
+    
+    // Track the view toggle
+    trackDiscoverToggleMap(newIsMapView ? 'map' : 'list');
   }, [isMapView]);
 
   // labels with counts

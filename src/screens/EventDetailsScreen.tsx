@@ -13,6 +13,7 @@ import { isFavorite, toggleFavorite } from "@/repositories/favoritesRepo";
 import { buildICS, saveAndShareICS, ensureCalendarAccess, createEvent } from '@/utils/calendar';
 import * as userRacesRepo from "@/repositories/userRacesRepo";
 import { providersRepo } from "@/repositories/providersRepo";
+import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -234,8 +235,12 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     try {
       if (wasFollowing) {
         await providersRepo.unfollow('me', provider.id);
+        // Track successful unfollow
+        trackProviderUnfollow(provider.id);
       } else {
         await providersRepo.follow('me', provider.id);
+        // Track successful follow
+        trackProviderFollow(provider.id);
       }
     } catch (error) {
       // Revert on error
