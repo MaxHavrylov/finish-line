@@ -44,6 +44,23 @@ function DiscoverStack() {
   );
 }
 
+function MyRacesStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="MyRacesList"
+        component={MyRacesScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EventDetails"
+        component={EventDetailsScreen}
+        options={{ title: "Event Details" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function CommunityStack() {
   const { t } = useTranslation('common');
   return (
@@ -142,8 +159,9 @@ export default function AppNavigator() {
         />
         <Tab.Screen 
           name="MyRaces" 
-          component={MyRacesScreen} 
-          options={{ title: t('myRaces') }} 
+          component={MyRacesStack} 
+          options={{ title: t('myRaces') }}
+          listeners={createTabPressListener('MyRaces', 'MyRacesList')}
         />
         <Tab.Screen 
           name="Community" 

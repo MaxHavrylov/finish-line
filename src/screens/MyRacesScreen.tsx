@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, FlatList, useWindowDimensions } from 'react-native';
 import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as userRacesRepo from '@/repositories/userRacesRepo';
 import { listFollowing } from '@/repositories/followsRepo';
 import { resultsRepo, type FriendResult } from '@/repositories/resultsRepo';
@@ -20,6 +20,7 @@ export default function MyRacesScreen() {
   const { t } = useTranslation('common');
   const theme = useTheme();
   const { width } = useWindowDimensions();
+  const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
   
   // Data states
@@ -60,6 +61,7 @@ export default function MyRacesScreen() {
         userRacesRepo.listFuture(),
         userRacesRepo.listPastWithMeta()
       ]);
+
       setFutureRaces(future);
       setPastRaces(past);
     } catch (error) {
@@ -177,39 +179,82 @@ export default function MyRacesScreen() {
     title: string;
     minDistanceLabel?: string;
     eventCategory: string;
-  } }) => (
-    <Card style={styles.raceCard}>
-      <Card.Content>
-        <Text variant="titleMedium">{item.title || 'Unknown Event'}</Text>
-        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
-          {item.minDistanceLabel && `${item.minDistanceLabel} • `}
-          {item.eventCategory}
-        </Text>
-        {item.bibNumber && (
-          <Text variant="bodySmall" style={{ marginTop: 4 }}>
-            Bib: {item.bibNumber}
+  } }) => {
+    if (!item || !item.eventId) {
+      console.warn('renderFutureRace: Invalid item', item);
+      return null;
+    }
+    
+    return (
+      <Card 
+        style={styles.raceCard}
+        onPress={() => navigation.navigate('EventDetails', { 
+          event: {
+            id: item.eventId,
+            title: item.title,
+            date: new Date().toISOString(), // We don't have the actual date in race data
+            location: '',
+            category: item.eventCategory,
+            distance: item.minDistanceLabel || '',
+            image: undefined
+          }
+        })}
+        testID="myraces-item"
+      >
+        <Card.Content>
+          <Text variant="titleMedium">{item.title || 'Unknown Event'}</Text>
+          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+            {item.minDistanceLabel && `${item.minDistanceLabel} • `}
+            {item.eventCategory}
           </Text>
-        )}
-      </Card.Content>
-      <Card.Actions>
-        <Button
-          mode="contained"
-          onPress={() => handleAddResult(item)}
-          testID="btn-add-result"
-        >
-          {t('addResult')}
-        </Button>
-      </Card.Actions>
-    </Card>
-  ), [handleAddResult, t]);
+          {item.bibNumber && (
+            <Text variant="bodySmall" style={{ marginTop: 4 }}>
+              Bib: {item.bibNumber}
+            </Text>
+          )}
+        </Card.Content>
+        <Card.Actions>
+          <Button
+            mode="contained"
+            onPress={(e) => {
+              e.stopPropagation();
+              handleAddResult(item);
+            }}
+            testID="btn-add-result"
+          >
+            {t('addResult')}
+          </Button>
+        </Card.Actions>
+      </Card>
+    );
+  }, [handleAddResult, t, navigation]);
 
   const renderPastRace = useCallback(({ item }: { item: PastRaceWithMeta }) => {
+    if (!item || !item.eventId) {
+      console.warn('renderPastRace: Invalid item', item);
+      return null;
+    }
+
     const isExpanded = expandedRaceId === item.id;
     const eventResults = friendsResults[item.eventId] || [];
     const isLoadingComparison = loadingComparisons[item.eventId];
 
     return (
-      <Card style={styles.raceCard}>
+      <Card 
+        style={styles.raceCard}
+        onPress={() => navigation.navigate('EventDetails', { 
+          event: {
+            id: item.eventId,
+            title: item.title,
+            date: new Date().toISOString(), // We don't have the actual date in race data
+            location: '',
+            category: item.eventCategory,
+            distance: item.minDistanceLabel || '',
+            image: undefined
+          }
+        })}
+        testID="myraces-item"
+      >
         <Card.Content>
           <View style={styles.pastRaceHeader}>
             <Text variant="titleMedium" style={{ flex: 1 }}>{item.title}</Text>
@@ -243,7 +288,10 @@ export default function MyRacesScreen() {
         <Card.Actions>
           <Button
             mode="text"
-            onPress={() => handleToggleExpand(item)}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleToggleExpand(item);
+            }}
             icon={isExpanded ? 'chevron-up' : 'chevron-down'}
           >
             {isExpanded ? 'Hide Comparison' : 'Compare vs Friends'}
@@ -341,7 +389,8 @@ export default function MyRacesScreen() {
     formatTime, 
     formatTimeDelta, 
     t, 
-    theme.colors
+    theme.colors,
+    navigation
   ]);
 
   const renderEmptyState = () => (
