@@ -86,6 +86,21 @@ export default function AppNavigator() {
   const paperTheme = usePaperTheme();
   const { t } = useTranslation('common');
 
+  // Helper function to create tab press listeners that reset to root screen
+  const createTabPressListener = (tabName: string, rootScreenName: string) => ({
+    navigation,
+  }: {
+    navigation: any;
+  }) => ({
+    tabPress: (e: any) => {
+      e.preventDefault();
+      
+      // Always navigate to the root screen of the target tab
+      // This ensures we always land on the root regardless of current state
+      navigation.navigate(tabName, { screen: rootScreenName });
+    }
+  });
+
   const navTheme: NavTheme = {
     dark: paperTheme.dark,
     colors: {
@@ -104,6 +119,7 @@ export default function AppNavigator() {
     <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         initialRouteName="DiscoverTab"
+        detachInactiveScreens={true}
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarActiveTintColor: paperTheme.colors.primary,
@@ -122,10 +138,25 @@ export default function AppNavigator() {
           name="DiscoverTab"
           component={DiscoverStack}
           options={{ title: "Discover" }}
+          listeners={createTabPressListener('DiscoverTab', 'Discover')}
         />
-        <Tab.Screen name="MyRaces" component={MyRacesScreen} options={{ title: t('myRaces') }} />
-        <Tab.Screen name="Community" component={CommunityStack} options={{ title: t('community') }} />
-        <Tab.Screen name="Settings" component={SettingsStack} options={{ title: t('settings') }} />
+        <Tab.Screen 
+          name="MyRaces" 
+          component={MyRacesScreen} 
+          options={{ title: t('myRaces') }} 
+        />
+        <Tab.Screen 
+          name="Community" 
+          component={CommunityStack} 
+          options={{ title: t('community') }}
+          listeners={createTabPressListener('Community', 'CommunityList')}
+        />
+        <Tab.Screen 
+          name="Settings" 
+          component={SettingsStack} 
+          options={{ title: t('settings') }}
+          listeners={createTabPressListener('Settings', 'SettingsList')}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
