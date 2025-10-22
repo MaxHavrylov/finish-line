@@ -245,7 +245,6 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 16,
-    fontWeight: "bold",
   },
   searchBar: {
     marginBottom: 12,

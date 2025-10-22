@@ -442,8 +442,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           />
 
           <Card.Content>
-            <Text>Date: {new Date(event.date).toLocaleString()}</Text>
-            <Text>Category: {event.category}</Text>
+            <Text variant="bodyMedium">Date: {new Date(event.date).toLocaleString()}</Text>
+            <Text variant="bodyMedium">Category: {event.category}</Text>
 
             {provider && (
               <>
@@ -499,7 +499,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             <Text variant="titleMedium">Available Distances</Text>
             <View style={styles.row}>
               {details.distances.length === 0 ? (
-                <Text style={{ opacity: 0.7 }}>No distances listed</Text>
+                <Text variant="bodyMedium" style={{ opacity: 0.7 }}>No distances listed</Text>
               ) : (
                 details.distances.map((d) => (
                   <Chip key={d.id} style={styles.chip}>

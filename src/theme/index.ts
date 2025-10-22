@@ -187,6 +187,19 @@ export const darkTheme: MD3Theme = {
   borderRadius: typeof borderRadius;
 };
 
+// Typography variant guide for consistent usage:
+// - displayLarge/Medium/Small: For large decorative text
+// - headlineLarge/Medium/Small: For main page headings 
+// - titleLarge: For screen headers (replaces fontSize: 24+)
+// - titleMedium: For card titles, section headers (replaces fontSize: 18-20)
+// - titleSmall: For subsection headers (replaces fontSize: 16-17)
+// - labelLarge: For buttons, chips, prominent labels (replaces fontSize: 14 bold)
+// - labelMedium: For form labels, tabs (replaces fontSize: 12-13 bold)
+// - labelSmall: For captions, metadata (replaces fontSize: 11-12)
+// - bodyLarge: For important body text (replaces fontSize: 16)
+// - bodyMedium: For standard body text (replaces fontSize: 14-15)
+// - bodySmall: For supporting text (replaces fontSize: 12-13)
+
 // Export theme type for TypeScript
 export type AppTheme = typeof lightTheme;
 

@@ -306,7 +306,6 @@ export default function MyRacesScreen() {
             {item.isPR && (
               <Chip
                 mode="flat"
-                textStyle={{ fontSize: 12, fontWeight: 'bold' }}
                 style={[styles.prChip, { backgroundColor: theme.colors.primaryContainer }]}
                 testID="chip-pr"
               >
@@ -360,7 +359,7 @@ export default function MyRacesScreen() {
                     <Text variant="bodyMedium" style={{ flex: 1 }}>
                       {index + 1}. {result.userName}
                     </Text>
-                    <Text variant="bodyMedium" style={{ fontWeight: '600' }}>
+                    <Text variant="labelLarge">
                       {formatTime(result.resultTimeSeconds)}
                     </Text>
                   </View>
@@ -380,7 +379,6 @@ export default function MyRacesScreen() {
                         <Text 
                           variant="bodyMedium" 
                           style={{ 
-                            fontWeight: '600',
                             color: comparisons.vsBest <= 0 ? theme.colors.primary : theme.colors.error
                           }}
                         >
@@ -393,7 +391,6 @@ export default function MyRacesScreen() {
                         <Text 
                           variant="bodyMedium" 
                           style={{ 
-                            fontWeight: '600',
                             color: comparisons.vsMedian <= 0 ? theme.colors.primary : theme.colors.error
                           }}
                         >
@@ -406,7 +403,6 @@ export default function MyRacesScreen() {
                         <Text 
                           variant="bodyMedium" 
                           style={{ 
-                            fontWeight: '600',
                             color: comparisons.vsLast <= 0 ? theme.colors.primary : theme.colors.error
                           }}
                         >
@@ -440,11 +436,11 @@ export default function MyRacesScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
+      <Text variant="bodyLarge" style={styles.emptyText}>
         {activeTab === 'future' ? t('emptyFuture') : t('noResultsYet')}
       </Text>
       {activeTab === 'past' && (
-        <Text style={[styles.emptyText, { marginTop: 8, fontSize: 14 }]}>
+        <Text variant="bodyMedium" style={[styles.emptyText, { marginTop: 8 }]}>
           {t('addYourFirstResult')}
         </Text>
       )}
@@ -542,7 +538,7 @@ export default function MyRacesScreen() {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>{t('loading')}</Text>
+        <Text variant="bodyMedium" style={{ marginTop: 16 }}>{t('loading')}</Text>
       </View>
     );
   }

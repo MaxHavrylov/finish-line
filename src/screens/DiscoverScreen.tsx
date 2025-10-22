@@ -139,7 +139,7 @@ function FilterPill({
         color={theme.colors.onSurface}
         style={{ marginRight: 8 }}
       />
-      <Text numberOfLines={1} style={{ opacity: 0.9, flexShrink: 1, textAlign: "center" }}>
+      <Text variant="labelMedium" numberOfLines={1} style={{ opacity: 0.9, flexShrink: 1, textAlign: "center" }}>
         {label}
       </Text>
     </Pressable>
@@ -423,7 +423,7 @@ export default function DiscoverScreen() {
     return (
       <View style={[styles.center, { flex: 1, padding: 16 }]}>
         <ActivityIndicator />
-        <Text style={{ marginTop: 8 }}>Loading events…</Text>
+        <Text variant="bodyMedium" style={{ marginTop: 8 }}>Loading events…</Text>
       </View>
     );
   }
@@ -433,7 +433,7 @@ export default function DiscoverScreen() {
       <OfflineBanner />
       {/* Header */}
       <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
-        <Text variant="headlineSmall" style={styles.headerTitle}>{t('discoverTitle')}</Text>
+        <Text variant="titleLarge" style={styles.headerTitle}>{t('discoverTitle')}</Text>
         <View style={styles.headerActions}>
           <Pressable 
             hitSlop={8} 
@@ -526,7 +526,7 @@ export default function DiscoverScreen() {
                       color={onlyFavorites ? theme.colors.error : theme.colors.onSurface}
                       style={{ marginRight: 8 }}
                     />
-                    <Text numberOfLines={1} style={{ opacity: 0.9 }}>
+                    <Text variant="labelMedium" numberOfLines={1} style={{ opacity: 0.9 }}>
                       {favoritesLabel}
                     </Text>
                   </Pressable>
@@ -535,7 +535,7 @@ export default function DiscoverScreen() {
                 <View style={styles.filtersBottomRow}>
                   <Pressable onPress={resetFilters} style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}>
                     <Ionicons name="filter-outline" size={16} color={GREEN} />
-                    <Text style={[styles.resetText, { color: GREEN }]}>{t('resetFilters')}</Text>
+                    <Text variant="labelLarge" style={{ color: GREEN, marginLeft: 6 }}>{t('resetFilters')}</Text>
                   </Pressable>
                 </View>
 
@@ -598,14 +598,14 @@ export default function DiscoverScreen() {
               />
               <Card.Content>
                 {!!(e.city || e.country) && (
-                  <Text style={{ marginBottom: 8 }}>
+                  <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
                     {[e.city, e.country].filter(Boolean).join(", ")}
                   </Text>
                 )}
                 <View style={[styles.row, { marginTop: 6 }]}>
                   <Chip
                     style={[styles.tagChip, { backgroundColor: categoryColor + "22", borderColor: categoryColor }]}
-                    textStyle={{ color: categoryColor, fontWeight: "600" }}
+                    textStyle={{ color: categoryColor }}
                     mode="outlined"
                   >
                     {e.eventCategory}
@@ -613,7 +613,6 @@ export default function DiscoverScreen() {
                   {e.minDistanceLabel ? (
                     <Chip
                       style={[styles.tagChip, { backgroundColor: theme.colors.elevation.level1 }]}
-                      textStyle={{ fontWeight: "600" }}
                     >
                       {e.minDistanceLabel}
                     </Chip>
@@ -621,7 +620,6 @@ export default function DiscoverScreen() {
                   {e.providerName ? (
                     <Chip
                       style={[styles.tagChip, { backgroundColor: theme.colors.surfaceVariant }]}
-                      textStyle={{ fontWeight: "500" }}
                       testID="chip-provider"
                     >
                       {e.providerName}
@@ -813,7 +811,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center"
   },
-  headerTitle: { fontWeight: "700", flex: 1, textAlign: "center" },
+  headerTitle: { flex: 1, textAlign: "center" },
   headerActions: {
     position: "absolute",
     right: H_PADDING,
@@ -849,7 +847,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   resetRow: { flexDirection: "row", alignItems: "center" },
-  resetText: { marginLeft: 6, fontWeight: "600" },
   mapPill: {
     flexDirection: "row",
     alignItems: "center",

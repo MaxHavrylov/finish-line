@@ -303,21 +303,20 @@ export default function ProviderDetailsScreen() {
         />
         <Card.Content>
           {location && (
-            <Text style={{ marginBottom: 8 }}>
+            <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
               {location}
             </Text>
           )}
           <View style={styles.chipRow}>
             <Chip
               style={[styles.chip, { backgroundColor: theme.colors.primaryContainer }]}
-              textStyle={{ color: theme.colors.onPrimaryContainer, fontWeight: "600" }}
+              textStyle={{ color: theme.colors.onPrimaryContainer }}
             >
               {item.eventCategory}
             </Chip>
             {item.minDistanceLabel && (
               <Chip
                 style={[styles.chip, { backgroundColor: theme.colors.elevation.level1 }]}
-                textStyle={{ fontWeight: "600" }}
               >
                 {item.minDistanceLabel}
               </Chip>
@@ -390,7 +389,7 @@ export default function ProviderDetailsScreen() {
       <Text variant="titleMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
         {t('providerNoEventsTitle')}
       </Text>
-      <Text style={{ textAlign: 'center', opacity: 0.7 }}>
+      <Text variant="bodyMedium" style={{ textAlign: 'center', opacity: 0.7 }}>
         {t('providerNoEvents')}
       </Text>
     </View>
@@ -400,7 +399,7 @@ export default function ProviderDetailsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>{t('loadingProvider')}</Text>
+        <Text variant="bodyMedium" style={{ marginTop: 16 }}>{t('loadingProvider')}</Text>
       </View>
     );
   }
@@ -411,7 +410,7 @@ export default function ProviderDetailsScreen() {
         <Text variant="titleMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
           {t('providerErrorTitle')}
         </Text>
-        <Text style={{ textAlign: 'center', opacity: 0.7, marginBottom: 16 }}>
+        <Text variant="bodyMedium" style={{ textAlign: 'center', opacity: 0.7, marginBottom: 16 }}>
           {error || t('providerErrorText')}
         </Text>
         <Button mode="contained" onPress={() => loadProviderData(1, false, false)}>
