@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, FlatList, useWindowDimensions, RefreshControl } from 'react-native';
 import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -31,6 +31,7 @@ export default function MyRacesScreen() {
   }>>([]);
   const [pastRaces, setPastRaces] = useState<PastRaceWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Result entry modal states
   const [resultModalVisible, setResultModalVisible] = useState(false);
@@ -74,6 +75,27 @@ export default function MyRacesScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Refresh handler
+  const onRefresh = useCallback(async () => {
+    if (refreshing) return; // Guard against concurrent requests
+    
+    setRefreshing(true);
+    try {
+      console.log('[MyRacesScreen] Refreshing data...');
+      const [future, past] = await Promise.all([
+        userRacesRepo.listFuture(),
+        userRacesRepo.listPastWithMeta()
+      ]);
+      
+      setFutureRaces(future);
+      setPastRaces(past);
+    } catch (error) {
+      console.warn('[MyRacesScreen] Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing]);
 
   // Reload data when screen comes into focus
   useFocusEffect(
@@ -550,6 +572,13 @@ export default function MyRacesScreen() {
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              testID={activeTab === 'future' ? 'refresh-myraces-future' : 'refresh-myraces-past'}
+            />
+          }
         />
       </View>
     </View>

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   FlatList,
   ScrollView,
+  RefreshControl,
   StatusBar,
 } from "react-native";
 import {
@@ -91,6 +92,7 @@ export default function CommunityScreen() {
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Available locations for filtering
   const locations = useMemo(() => {
@@ -126,6 +128,25 @@ export default function CommunityScreen() {
       }, 500);
     }
   }, [paginatedRunners.length, filteredRunners.length]);
+
+  const onRefresh = useCallback(async () => {
+    if (refreshing) return; // Guard against concurrent requests
+    
+    setRefreshing(true);
+    try {
+      console.log('[CommunityScreen] Refreshing data...');
+      // Reset to first page and clear any loading states
+      setPage(1);
+      setIsLoading(false);
+      
+      // Simulate network delay for refresh
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.warn('[CommunityScreen] Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing]);
 
   const handleViewRunner = useCallback((runnerId: string) => {
     // @ts-ignore - We know this route exists in our stack navigator
@@ -189,6 +210,13 @@ export default function CommunityScreen() {
         contentContainerStyle={styles.list}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            testID="refresh-community"
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text variant="bodyLarge">{t('emptyList')}</Text>

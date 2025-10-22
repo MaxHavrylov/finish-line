@@ -174,8 +174,9 @@ export default function ProviderDetailsScreen() {
   }, [searchText, dateWindow, sortOption, loading, saveCurrentFilters]);
 
   const handleRefresh = useCallback(() => {
+    if (refreshing) return; // Guard against concurrent requests
     loadProviderData(1, true, false);
-  }, [loadProviderData]);
+  }, [loadProviderData, refreshing]);
 
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && hasMorePages && providerData) {
@@ -433,6 +434,7 @@ export default function ProviderDetailsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
+            testID="refresh-provider"
           />
         }
         onEndReached={handleLoadMore}

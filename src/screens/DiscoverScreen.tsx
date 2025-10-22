@@ -586,7 +586,7 @@ export default function DiscoverScreen() {
         }}
           ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
 
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} testID="refresh-discover" />}
           onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: 32 }}
