@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Avatar, Text, Card, Button, Divider } from "react-native-paper";
+import { spacing } from '@/theme';
 
 export default function ProfileScreen() {
   return (
@@ -35,7 +36,7 @@ export default function ProfileScreen() {
         <Card.Content>
           <Text>Spartan Race Sprint — Oct 28, 2023</Text>
           <Text>01:15:23, Rank 12/250, Distance: 5 km</Text>
-          <Divider style={{ marginVertical: 8 }} />
+          <Divider style={{ marginVertical: spacing.sm }} />
           <Text>Prague Marathon — May 7, 2023</Text>
           <Text>03:45:10, Rank 87/1200, Distance: 42.2 km</Text>
         </Card.Content>
@@ -45,7 +46,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  profileCard: { borderRadius: 16, marginBottom: 16 },
-  card: { borderRadius: 16, marginBottom: 16 }
+  container: { flex: 1, padding: spacing.lg },
+  profileCard: { borderRadius: 16, marginBottom: spacing.lg },
+  card: { borderRadius: 16, marginBottom: spacing.lg }
 });

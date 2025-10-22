@@ -10,6 +10,7 @@ import { trackResultAdded, trackResultViewCompare } from '@/services/analytics';
 import type { FutureUserRace, PastUserRace } from '@/types/events';
 import OfflineBanner from '../components/OfflineBanner';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
+import { spacing } from '@/theme';
 
 type PastRaceWithMeta = PastUserRace & { 
   isPR?: boolean;
@@ -247,12 +248,12 @@ export default function MyRacesScreen() {
       >
         <Card.Content>
           <Text variant="titleMedium">{item.title || 'Unknown Event'}</Text>
-          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: spacing.xs }}>
             {item.minDistanceLabel && `${item.minDistanceLabel} • `}
             {item.eventCategory}
           </Text>
           {item.bibNumber && (
-            <Text variant="bodySmall" style={{ marginTop: 4 }}>
+            <Text variant="bodySmall" style={{ marginTop: spacing.xs }}>
               Bib: {item.bibNumber}
             </Text>
           )}
@@ -314,17 +315,17 @@ export default function MyRacesScreen() {
               </Chip>
             )}
           </View>
-          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+          <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: spacing.xs }}>
             {item.minDistanceLabel && `${item.minDistanceLabel} • `}
             {item.eventCategory}
           </Text>
           {item.resultTimeSeconds && (
-            <Text variant="titleSmall" style={{ marginTop: 8, color: theme.colors.primary }}>
+            <Text variant="titleSmall" style={{ marginTop: spacing.sm, color: theme.colors.primary }}>
               {t('resultTime')}: {formatTime(item.resultTimeSeconds)}
             </Text>
           )}
           {item.note && (
-            <Text variant="bodySmall" style={{ marginTop: 4, fontStyle: 'italic' }}>
+            <Text variant="bodySmall" style={{ marginTop: spacing.xs, fontStyle: 'italic' }}>
               {item.note}
             </Text>
           )}
@@ -348,11 +349,11 @@ export default function MyRacesScreen() {
             {isLoadingComparison ? (
               <View style={styles.comparisonLoading}>
                 <ActivityIndicator size="small" />
-                <Text variant="bodySmall" style={{ marginLeft: 8 }}>Loading comparisons...</Text>
+                <Text variant="bodySmall" style={{ marginLeft: spacing.sm }}>Loading comparisons...</Text>
               </View>
             ) : eventResults.length > 0 ? (
               <View>
-                <Text variant="titleSmall" style={{ marginBottom: 12 }}>Friends' Results</Text>
+                <Text variant="titleSmall" style={{ marginBottom: spacing.md }}>Friends' Results</Text>
                 
                 {/* Friends' times */}
                 {eventResults.map((result, index) => (
@@ -373,7 +374,7 @@ export default function MyRacesScreen() {
                   
                   return (
                     <View style={[styles.deltaContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
-                      <Text variant="titleSmall" style={{ marginBottom: 8, marginTop: 16 }}>Your Performance</Text>
+                      <Text variant="titleSmall" style={{ marginBottom: spacing.sm, marginTop: spacing.lg }}>Your Performance</Text>
                       
                       <View style={styles.deltaRow} testID="result-delta-best">
                         <Text variant="bodyMedium">vs Best Friend:</Text>
@@ -441,7 +442,7 @@ export default function MyRacesScreen() {
         {activeTab === 'future' ? t('emptyFuture') : t('noResultsYet')}
       </Text>
       {activeTab === 'past' && (
-        <Text variant="bodyMedium" style={[styles.emptyText, { marginTop: 8 }]}>
+        <Text variant="bodyMedium" style={[styles.emptyText, { marginTop: spacing.sm }]}>
           {t('addYourFirstResult')}
         </Text>
       )}
@@ -458,12 +459,12 @@ export default function MyRacesScreen() {
         dismissableBackButton={true}
         testID="modal-add-result"
       >
-        <Text variant="headlineSmall" style={{ marginBottom: 16 }}>
+        <Text variant="headlineSmall" style={{ marginBottom: spacing.lg }}>
           {t('enterResultTitle')}
         </Text>
         
         {selectedRace && (
-          <Text variant="bodyLarge" style={{ marginBottom: 24, opacity: 0.8 }}>
+          <Text variant="bodyLarge" style={{ marginBottom: spacing.xxl, opacity: 0.8 }}>
             {selectedRace.title}
           </Text>
         )}
@@ -511,7 +512,7 @@ export default function MyRacesScreen() {
           onChangeText={setResultNote}
           multiline
           numberOfLines={3}
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: spacing.xxl }}
         />
 
         <View style={styles.modalActions}>
@@ -539,7 +540,7 @@ export default function MyRacesScreen() {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" />
-        <Text variant="bodyMedium" style={{ marginTop: 16 }}>{t('loading')}</Text>
+        <Text variant="bodyMedium" style={{ marginTop: spacing.lg }}>{t('loading')}</Text>
       </View>
     );
   }
@@ -627,8 +628,8 @@ const styles = StyleSheet.create({
     flex: 1
   },
   tabsContainer: {
-    padding: 8,
-    gap: 8
+    padding: spacing.sm,
+    gap: spacing.sm
   },
   tabButton: {
     flex: 1
@@ -638,19 +639,19 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    padding: 16
+    padding: spacing.lg
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16
+    padding: spacing.lg
   },
   emptyText: {
     opacity: 0.7
   },
   raceCard: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     borderRadius: 12,
     elevation: 1,
     overflow: 'hidden'
@@ -661,23 +662,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   prChip: {
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     height: 28
   },
   modalContainer: {
-    padding: 24,
-    margin: 16,
+    padding: spacing.xxl,
+    margin: spacing.lg,
     borderRadius: 16,
     maxHeight: '80%'
   },
   timeInputRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16
+    gap: spacing.md,
+    marginBottom: spacing.lg
   },
   timeInputContainer: {
     flex: 1,
-    gap: 4
+    gap: spacing.xs
   },
   timeInput: {
     textAlign: 'center'
@@ -685,7 +686,7 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12
+    gap: spacing.md
   },
   comparisonContainer: {
     paddingTop: 0,
@@ -696,7 +697,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16
+    padding: spacing.lg
   },
   friendResultRow: {
     flexDirection: 'row',
@@ -705,20 +706,20 @@ const styles = StyleSheet.create({
     paddingVertical: 4
   },
   deltaContainer: {
-    marginTop: 8,
-    padding: 12,
+    marginTop: spacing.sm,
+    padding: spacing.md,
     borderRadius: 8
   },
   deltaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4
+    paddingVertical: spacing.xs
   },
   fab: {
     position: 'absolute',
-    right: 16,
-    bottom: 24,
+    right: spacing.lg,
+    bottom: spacing.xxl,
     elevation: 4
   }
 });

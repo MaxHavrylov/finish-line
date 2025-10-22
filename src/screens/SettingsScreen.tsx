@@ -12,6 +12,7 @@ import i18n, {
 } from "@/i18n";
 import { ThemeContext, ThemeMode } from "@/theme/ThemeProvider";
 import { useTranslation } from "react-i18next";
+import { spacing } from '@/theme';
 
 // Keys for AsyncStorage
 const STORAGE_KEYS = {
@@ -227,8 +228,8 @@ export default function SettingsScreen() {
 const ROW_HEIGHT = 64;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  groupLabel: { opacity: 0.6, marginBottom: 8, letterSpacing: 0.5 },
+  container: { flex: 1, padding: spacing.lg },
+  groupLabel: { opacity: 0.6, marginBottom: spacing.sm, letterSpacing: 0.5 },
   card: { borderRadius: 16 },
   row: {
     minHeight: ROW_HEIGHT,

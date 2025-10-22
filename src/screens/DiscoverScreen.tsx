@@ -39,6 +39,7 @@ import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
 import { trackDiscoverToggleMap } from "../services/analytics";
 import MapView from "../components/MapView";
 import OfflineBanner from "../components/OfflineBanner";
+import { spacing } from '@/theme';
 
 // ---- Config / constants
 type DateFilter = "Any" | "30d" | "90d";
@@ -138,7 +139,7 @@ function FilterPill({
         name={icon}
         size={16}
         color={theme.colors.onSurface}
-        style={{ marginRight: 8 }}
+        style={{ marginRight: spacing.sm }}
       />
       <Text variant="labelMedium" numberOfLines={1} style={{ opacity: 0.9, flexShrink: 1, textAlign: "center" }}>
         {label}
@@ -422,7 +423,7 @@ export default function DiscoverScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.center, { flex: 1, padding: 16 }]}>
+      <View style={[styles.center, { flex: 1, padding: spacing.lg }]}>
         <ActivityIndicator />
         <Text variant="bodyMedium" style={{ marginTop: 8 }}>Loading events…</Text>
       </View>
@@ -525,7 +526,7 @@ export default function DiscoverScreen() {
                       name={onlyFavorites ? "heart" : "heart-outline"}
                       size={16}
                       color={onlyFavorites ? theme.colors.error : theme.colors.onSurface}
-                      style={{ marginRight: 8 }}
+                      style={{ marginRight: spacing.sm }}
                     />
                     <Text variant="labelMedium" numberOfLines={1} style={{ opacity: 0.9 }}>
                       {favoritesLabel}
@@ -599,7 +600,7 @@ export default function DiscoverScreen() {
               />
               <Card.Content>
                 {!!(e.city || e.country) && (
-                  <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
+                  <Text variant="bodyMedium" style={{ marginBottom: spacing.sm }}>
                     {[e.city, e.country].filter(Boolean).join(", ")}
                   </Text>
                 )}
@@ -658,9 +659,9 @@ export default function DiscoverScreen() {
           onDismiss={toggleTypeModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
-          <Text variant="titleMedium" style={{ marginBottom: 12 }}>Race Types</Text>
+          <Text variant="titleMedium" style={{ marginBottom: spacing.md }}>Race Types</Text>
 
-          <View style={[styles.modalChipRow, { marginBottom: 8 }]}>
+          <View style={[styles.modalChipRow, { marginBottom: spacing.sm }]}>
             <Chip mode="outlined" onPress={selectAllCategories} style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}>Select All</Chip>
             <Chip mode="outlined" onPress={clearCategories} style={[styles.modalChip, styles.stableChip, styles.stableChipSize]}>Clear</Chip>
           </View>
@@ -700,7 +701,7 @@ export default function DiscoverScreen() {
           onDismiss={toggleDateModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
-          <Text variant="titleMedium" style={{ marginBottom: 12 }}>Upcoming Dates</Text>
+          <Text variant="titleMedium" style={{ marginBottom: spacing.md }}>Upcoming Dates</Text>
           <View style={styles.modalChipRow}>
             {(["Any", "30d", "90d"] as DateFilter[]).map((d) => {
               const isSel = dateFilter === d;
@@ -736,7 +737,7 @@ export default function DiscoverScreen() {
           onDismiss={toggleLocationModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
-          <Text variant="titleMedium" style={{ marginBottom: 12 }}>Location</Text>
+          <Text variant="titleMedium" style={{ marginBottom: spacing.md }}>Location</Text>
           <TextInput mode="outlined" placeholder="City or country…" value={locationText} onChangeText={setLocationText} />
           <Button mode="contained" onPress={toggleLocationModal} style={{ marginTop: 12 }}>
             Apply
@@ -749,9 +750,9 @@ export default function DiscoverScreen() {
           onDismiss={toggleDistanceModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
-          <Text variant="titleMedium" style={{ marginBottom: 12 }}>Distance</Text>
+          <Text variant="titleMedium" style={{ marginBottom: spacing.md }}>Distance</Text>
 
-          <View style={[styles.modalChipRow, { marginBottom: 8 }]}>
+          <View style={[styles.modalChipRow, { marginBottom: spacing.sm }]}>
             <Chip
               mode="outlined"
               compact
@@ -822,7 +823,7 @@ const styles = StyleSheet.create({
 
   // Filters block
   filtersWrap: { paddingHorizontal: H_PADDING, paddingTop: 8, paddingBottom: 12 },
-  filtersTitle: { marginBottom: 8 },
+  filtersTitle: { marginBottom: spacing.sm },
 
   // Fixed-size pills in a 2-column responsive grid
   filtersGrid: {
@@ -866,12 +867,12 @@ const styles = StyleSheet.create({
   cardCover: {
     aspectRatio: 16 / 9,
   },
-  row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
   tagChip: { borderWidth: 1 },
 
   // FAB
   fab: { position: "absolute", right: H_PADDING, bottom: 24, elevation: 4 },
-  mapActionsContainer: { position: "absolute", right: H_PADDING, bottom: 24, gap: 12 },
+  mapActionsContainer: { position: "absolute", right: H_PADDING, bottom: spacing.xxl, gap: spacing.md },
   mapFiltersFab: { elevation: 4 },
   mapActionFab: { elevation: 4 },
   mapFilterStatus: { 
@@ -885,9 +886,9 @@ const styles = StyleSheet.create({
   },
 
   // Modals
-  sheet: { marginHorizontal: H_PADDING, padding: 16, borderRadius: 16 },
-  modalChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  modalChip: { marginRight: 8, marginBottom: 8 },
+  sheet: { marginHorizontal: H_PADDING, padding: spacing.lg, borderRadius: 16 },
+  modalChipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  modalChip: { marginRight: spacing.sm, marginBottom: spacing.sm },
 
   // 🔒 Stable chip sizing to prevent modal reflow when selected
   stableChip: {
@@ -912,7 +913,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
     opacity: 0.7
   },
   emptyButton: {

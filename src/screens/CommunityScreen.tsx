@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { mockRunners, Runner } from "@/data/mockRunners";
 import OfflineBanner from '../components/OfflineBanner';
+import { spacing } from '@/theme';
 
 const PAGE_SIZE = 20;
 
@@ -240,32 +241,32 @@ const styles = StyleSheet.create({
     flex: 1 
   },
   header: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   title: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   searchBar: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   filterLabel: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   locationFilter: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   locationChip: {
-    marginRight: 8,
-    marginBottom: 8,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
   },
   list: {
-    padding: 16,
+    padding: spacing.lg,
     paddingTop: 0,
   },
   card: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
     borderRadius: 12,
     elevation: 1,
     overflow: 'hidden',
@@ -276,22 +277,22 @@ const styles = StyleSheet.create({
   },
   runnerInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: spacing.lg,
   },
   location: {
     opacity: 0.7,
   },
   stats: {
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   viewButton: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   emptyState: {
-    padding: 24,
+    padding: spacing.xxl,
     alignItems: "center",
   },
   loading: {
-    padding: 16,
+    padding: spacing.lg,
   },
 });

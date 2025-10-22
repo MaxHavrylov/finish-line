@@ -17,6 +17,7 @@ import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics
 import { addNotification } from "@/repositories/notificationsRepo";
 import { useModalBackClose } from "@/hooks/useModalBackClose";
 import { navigateBackOrTo } from "@/navigation/AppNavigator";
+import { spacing } from '@/theme';
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -472,7 +473,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                         loading={followLoading}
                         disabled={followLoading}
                         testID="btn-follow-provider"
-                        style={{ marginRight: 8 }}
+                        style={{ marginRight: spacing.sm }}
                         icon={isFollowingProvider ? "bell-off" : "bell-plus"}
                       >
                         {t(isFollowingProvider ? 'unfollowProvider' : 'followProvider')}
@@ -570,7 +571,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           </Card.Actions>
         </Card>
       ) : (
-        <ActivityIndicator style={{ margin: 20 }} />
+        <ActivityIndicator style={{ margin: spacing.xl }} />
       )}
 
       <Snackbar
@@ -589,7 +590,7 @@ const styles = StyleSheet.create({
     flex: 1 
   },
   card: { 
-    margin: 16, 
+    margin: spacing.lg, 
     borderRadius: 16,
     overflow: 'hidden'
   },
@@ -601,23 +602,23 @@ const styles = StyleSheet.create({
   row: { 
     flexDirection: "row", 
     flexWrap: "wrap", 
-    gap: 8, 
-    marginTop: 8 
+    gap: spacing.sm, 
+    marginTop: spacing.sm 
   },
   chip: { 
-    marginRight: 8,
-    marginBottom: 8 
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm 
   },
   cardActions: {
-    padding: 16,
+    padding: spacing.lg,
   },
   buttonContainer: {
-    gap: 12,
+    gap: spacing.md,
     width: '100%',
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
     width: '100%',
   },
   registerButton: {
@@ -635,29 +636,29 @@ const styles = StyleSheet.create({
   },
   // Modal styles
   modal: {
-    margin: 20,
-    padding: 20,
+    margin: spacing.xl,
+    padding: spacing.xl,
     borderRadius: 16,
     maxWidth: 500,
     alignSelf: 'center',
     width: '90%'
   },
   modalTitle: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
     textAlign: 'center'
   },
   input: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
     backgroundColor: 'transparent'
   },
   modalActions: {
-    marginTop: 20,
-    gap: 12
+    marginTop: spacing.xl,
+    gap: spacing.md
   },
   actionButtonGroup: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8
+    gap: spacing.sm
   },
   actionButton: {
     minWidth: 100
@@ -670,12 +671,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
     minHeight: 40,
   },
   providerInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   providerButtons: {
     flexDirection: 'row',
