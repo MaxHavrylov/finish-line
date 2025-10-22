@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, useWindowDimensions, RefreshControl } from 'react-native';
-import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityIndicator } from 'react-native-paper';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, FlatList, useWindowDimensions, RefreshControl, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { Button, Text, useTheme, Card, Chip, Portal, Modal, TextInput, ActivityIndicator, FAB } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as userRacesRepo from '@/repositories/userRacesRepo';
@@ -32,6 +32,7 @@ export default function MyRacesScreen() {
   const [pastRaces, setPastRaces] = useState<PastRaceWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showToTop, setShowToTop] = useState(false);
 
   // Result entry modal states
   const [resultModalVisible, setResultModalVisible] = useState(false);
@@ -53,6 +54,18 @@ export default function MyRacesScreen() {
   
   // Responsive layout threshold
   const isNarrow = width < 600;
+
+  // Ref for FlatList scroll control
+  const listRef = useRef<FlatList>(null);
+
+  // Scroll handling
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setShowToTop(e.nativeEvent.contentOffset.y > 600);
+  };
+
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
 
   // Load data
   const loadData = useCallback(async () => {
@@ -565,6 +578,7 @@ export default function MyRacesScreen() {
       {/* Content */}
       <View style={styles.content}>
         <FlatList
+          ref={listRef}
           testID={activeTab === 'future' ? 'list-future' : 'list-past'}
           data={currentData}
           renderItem={renderItem}
@@ -572,6 +586,8 @@ export default function MyRacesScreen() {
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
@@ -581,6 +597,17 @@ export default function MyRacesScreen() {
           }
         />
       </View>
+
+      {/* Scroll to top FAB */}
+      {showToTop && (
+        <FAB
+          icon="arrow-up"
+          onPress={scrollToTop}
+          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          color={theme.colors.onPrimary}
+          testID="fab-scroll-top"
+        />
+      )}
     </View>
   );
 }
@@ -679,5 +706,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 4
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    elevation: 4
   }
 });

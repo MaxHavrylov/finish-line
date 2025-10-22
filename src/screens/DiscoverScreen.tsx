@@ -304,7 +304,7 @@ export default function DiscoverScreen() {
   }, [events, onlyFavorites, favoriteIds, selectedCategories, dateFilter, locationText, selectedDistances]);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setShowToTop(e.nativeEvent.contentOffset.y > 400);
+    setShowToTop(e.nativeEvent.contentOffset.y > 600);
   };
 
   const scrollToTop = () => {
@@ -599,6 +599,7 @@ export default function DiscoverScreen() {
           onPress={scrollToTop}
           style={[styles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
+          testID="fab-scroll-top"
         />
       )}
 
