@@ -283,6 +283,7 @@ export default function ProviderDetailsScreen() {
         style={styles.eventCard}
         onPress={() =>
           (navigation as any).navigate("EventDetails", {
+            fromTab: (route.params as any)?.fromTab || 'DiscoverTab',
             event: {
               id: item.id,
               title: item.title,

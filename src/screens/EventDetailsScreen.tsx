@@ -451,7 +451,10 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                 <Pressable 
                   style={styles.providerSection} 
                   testID="provider-block"
-                  onPress={() => (navigation as any).navigate("ProviderDetails", { providerId: provider.id })}
+                  onPress={() => (navigation as any).navigate("ProviderDetails", { 
+                    providerId: provider.id, 
+                    fromTab: (route.params as any)?.fromTab || 'DiscoverTab' 
+                  })}
                 >
                   <Text variant="titleMedium">{t('eventOrganizer')}</Text>
                   <View style={styles.providerContainer}>

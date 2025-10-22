@@ -232,6 +232,7 @@ export default function MyRacesScreen() {
       <Card 
         style={styles.raceCard}
         onPress={() => navigation.navigate('EventDetails', { 
+          fromTab: 'MyRaces',
           event: {
             id: item.eventId,
             title: item.title,
@@ -286,6 +287,7 @@ export default function MyRacesScreen() {
       <Card 
         style={styles.raceCard}
         onPress={() => navigation.navigate('EventDetails', { 
+          fromTab: 'MyRaces',
           event: {
             id: item.eventId,
             title: item.title,

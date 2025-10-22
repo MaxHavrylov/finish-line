@@ -565,6 +565,7 @@ export default function DiscoverScreen() {
               style={styles.card}
               onPress={() =>
                 navigation.navigate("EventDetails", {
+                  fromTab: 'DiscoverTab',
                   event: {
                     id: e.id,
                     title: e.title,

@@ -151,7 +151,7 @@ export default function CommunityScreen() {
 
   const handleViewRunner = useCallback((runnerId: string) => {
     // @ts-ignore - We know this route exists in our stack navigator
-    navigation.navigate('RunnerDetails', { runnerId });
+    navigation.navigate('RunnerDetails', { runnerId, fromTab: 'Community' });
   }, [navigation]);
 
   const renderItem = useCallback(({ item }: { item: Runner }) => (
