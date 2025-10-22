@@ -67,7 +67,7 @@ const COLORS_LIGHT = {
 const COLORS_DARK = {
   // Primary brand colors
   primary: PRIMARY,
-  onPrimary: "#003300",
+  onPrimary: "#000000", // Pure black for better contrast on green
   primaryContainer: "#2E7D32", // Green 800
   onPrimaryContainer: "#C8E6C9", // Green 100
 
@@ -85,13 +85,13 @@ const COLORS_DARK = {
 
   // Surface colors
   surface: "#121212",
-  onSurface: "#E6E1E5",
+  onSurface: "#FFFFFF", // Pure white for maximum contrast
   surfaceVariant: "#1E1E1E",
-  onSurfaceVariant: "#CAC4D0",
+  onSurfaceVariant: "#E0E0E0", // Lighter for better contrast
 
   // Background
   background: "#0D0D0D",
-  onBackground: "#E6E1E5",
+  onBackground: "#FFFFFF", // Pure white for maximum contrast
 
   // Outline and borders
   outline: "#424242",

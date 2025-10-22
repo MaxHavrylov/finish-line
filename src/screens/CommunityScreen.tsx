@@ -56,7 +56,7 @@ function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: ()
         <Avatar.Text 
           size={50} 
           label={initials} 
-          color="white"
+          color={theme.colors.onPrimary}
           style={{ backgroundColor: avatarColor }}
         />
         <View style={styles.runnerInfo}>

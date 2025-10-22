@@ -344,7 +344,7 @@ export default function MyRacesScreen() {
         </Card.Actions>
 
         {isExpanded && (
-          <Card.Content style={styles.comparisonContainer} testID="result-compare">
+          <Card.Content style={[styles.comparisonContainer, { borderTopColor: theme.colors.outline }]} testID="result-compare">
             {isLoadingComparison ? (
               <View style={styles.comparisonLoading}>
                 <ActivityIndicator size="small" />
@@ -372,7 +372,7 @@ export default function MyRacesScreen() {
                   const comparisons = resultsRepo.calculateComparisons(item.resultTimeSeconds, friendTimes);
                   
                   return (
-                    <View style={styles.deltaContainer}>
+                    <View style={[styles.deltaContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
                       <Text variant="titleSmall" style={{ marginBottom: 8, marginTop: 16 }}>Your Performance</Text>
                       
                       <View style={styles.deltaRow} testID="result-delta-best">
@@ -453,7 +453,7 @@ export default function MyRacesScreen() {
       <Modal
         visible={resultModalVisible}
         onDismiss={() => setResultModalVisible(false)}
-        contentContainerStyle={styles.modalContainer}
+        contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
         dismissable={true}
         dismissableBackButton={true}
         testID="modal-add-result"
@@ -665,7 +665,6 @@ const styles = StyleSheet.create({
     height: 28
   },
   modalContainer: {
-    backgroundColor: 'white',
     padding: 24,
     margin: 16,
     borderRadius: 16,
@@ -692,7 +691,6 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     marginTop: -8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)'
   },
   comparisonLoading: {
     flexDirection: 'row',
@@ -709,7 +707,6 @@ const styles = StyleSheet.create({
   deltaContainer: {
     marginTop: 8,
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 8
   },
   deltaRow: {

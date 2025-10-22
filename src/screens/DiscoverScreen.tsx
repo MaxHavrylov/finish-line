@@ -129,6 +129,7 @@ function FilterPill({
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
+        { backgroundColor: theme.colors.surfaceVariant },
         pressed && { opacity: 0.85 } // no scale → no visual jump
       ]}
       hitSlop={6}
@@ -678,8 +679,8 @@ export default function DiscoverScreen() {
                     styles.stableChip,
                     styles.stableChipSize,
                     {
-                      borderColor: isSel ? GREEN : "#AAA",
-                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)" // green tint vs neutral
+                      borderColor: isSel ? GREEN : theme.colors.outline,
+                      backgroundColor: isSel ? theme.colors.primaryContainer : theme.colors.surfaceVariant
                     }
                   ]}
                 >
@@ -714,8 +715,8 @@ export default function DiscoverScreen() {
                     styles.stableChip,
                     styles.stableChipSize,
                     {
-                      borderColor: isSel ? GREEN : "#AAA",
-                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)"
+                      borderColor: isSel ? GREEN : theme.colors.outline,
+                      backgroundColor: isSel ? theme.colors.primaryContainer : theme.colors.surfaceVariant
                     }
                   ]}
                 >
@@ -783,8 +784,8 @@ export default function DiscoverScreen() {
                     styles.stableChip,
                     styles.stableChipSize,
                     {
-                      borderColor: isSel ? GREEN : "#AAA",
-                      backgroundColor: isSel ? "rgba(76,175,80,0.12)" : "rgba(0,0,0,0.04)"
+                      borderColor: isSel ? GREEN : theme.colors.outline,
+                      backgroundColor: isSel ? theme.colors.primaryContainer : theme.colors.surfaceVariant
                     }
                   ]}
                 >
@@ -837,7 +838,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.04)"
   },
 
   filtersBottomRow: {
