@@ -15,6 +15,7 @@ import * as userRacesRepo from "@/repositories/userRacesRepo";
 import { providersRepo } from "@/repositories/providersRepo";
 import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
 import { addNotification } from "@/repositories/notificationsRepo";
+import { useModalBackClose } from "@/hooks/useModalBackClose";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -47,6 +48,12 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     startTimeLocal: '',
     targetTimeMinutes: '',
     note: ''
+  });
+
+  // Handle modal back close
+  useModalBackClose({
+    isVisible: manageModalVisible,
+    onDismiss: () => setManageModalVisible(false)
   });
 
   useEffect(() => {
@@ -275,6 +282,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       visible={manageModalVisible}
       onDismiss={() => setManageModalVisible(false)}
       contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+      dismissable={true}
+      dismissableBackButton={true}
       testID="modal-manage"
     >
       <Text variant="titleLarge" style={styles.modalTitle}>{t('manageRace')}</Text>

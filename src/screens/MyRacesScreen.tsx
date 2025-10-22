@@ -9,6 +9,7 @@ import { resultsRepo, type FriendResult } from '@/repositories/resultsRepo';
 import { trackResultAdded, trackResultViewCompare } from '@/services/analytics';
 import type { FutureUserRace, PastUserRace } from '@/types/events';
 import OfflineBanner from '../components/OfflineBanner';
+import { useModalBackClose } from '@/hooks/useModalBackClose';
 
 type PastRaceWithMeta = PastUserRace & { 
   isPR?: boolean;
@@ -58,6 +59,12 @@ export default function MyRacesScreen() {
 
   // Ref for FlatList scroll control
   const listRef = useRef<FlatList>(null);
+
+  // Handle modal back close for result modal
+  useModalBackClose({
+    isVisible: resultModalVisible,
+    onDismiss: () => setResultModalVisible(false)
+  });
 
   // Scroll handling
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -448,6 +455,8 @@ export default function MyRacesScreen() {
         visible={resultModalVisible}
         onDismiss={() => setResultModalVisible(false)}
         contentContainerStyle={styles.modalContainer}
+        dismissable={true}
+        dismissableBackButton={true}
         testID="modal-add-result"
       >
         <Text variant="headlineSmall" style={{ marginBottom: 16 }}>
