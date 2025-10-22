@@ -7,7 +7,10 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Pressable,
-  Dimensions
+  Dimensions,
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from "react-native";
 import {
   Card,
@@ -64,6 +67,27 @@ const CATEGORY_OPTIONS: EventCategory[] = [
 ];
 
 const DISTANCE_OPTIONS: DistanceOption[] = ["<=5", "5-10", ">10"];
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// Animation configurations
+const FILTER_ANIMATION_CONFIG = {
+  duration: 200,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+};
+
+// ---- Screen-specific search/filter constants
+const IS_NARROW_THRESHOLD = 600;
 
 const CATEGORY_COLORS: Partial<Record<EventCategory, string>> = {
   OCR: "#22c55e",
@@ -154,6 +178,27 @@ export default function DiscoverScreen() {
   const [dateOpen, setDateOpen] = useState(false);
   const [locOpen, setLocOpen] = useState(false);
   const [distOpen, setDistOpen] = useState(false);
+
+  // Animated modal toggle functions
+  const toggleTypeModal = useCallback(() => {
+    LayoutAnimation.configureNext(FILTER_ANIMATION_CONFIG);
+    setTypeOpen(prev => !prev);
+  }, []);
+
+  const toggleDateModal = useCallback(() => {
+    LayoutAnimation.configureNext(FILTER_ANIMATION_CONFIG);
+    setDateOpen(prev => !prev);
+  }, []);
+
+  const toggleLocationModal = useCallback(() => {
+    LayoutAnimation.configureNext(FILTER_ANIMATION_CONFIG);
+    setLocOpen(prev => !prev);
+  }, []);
+
+  const toggleDistanceModal = useCallback(() => {
+    LayoutAnimation.configureNext(FILTER_ANIMATION_CONFIG);
+    setDistOpen(prev => !prev);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -440,7 +485,7 @@ export default function DiscoverScreen() {
             />
             <FAB
               icon="filter-variant"
-              onPress={() => setTypeOpen(true)}
+              onPress={toggleTypeModal}
               style={[styles.mapFiltersFab, { backgroundColor: theme.colors.secondary }]}
               color={theme.colors.onSecondary}
               size="medium"
@@ -461,10 +506,10 @@ export default function DiscoverScreen() {
                 <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
 
                 <View style={styles.filtersGrid}>
-                  <FilterPill icon="pulse-outline" label={typesLabel} onPress={() => setTypeOpen(true)} />
-                  <FilterPill icon="calendar-outline" label={datesLabel} onPress={() => setDateOpen(true)} />
-                  <FilterPill icon="location-outline" label={locationLabel} onPress={() => setLocOpen(true)} />
-                  <FilterPill icon="swap-vertical-outline" label={distanceLabel} onPress={() => setDistOpen(true)} />
+                  <FilterPill icon="pulse-outline" label={typesLabel} onPress={toggleTypeModal} />
+                  <FilterPill icon="calendar-outline" label={datesLabel} onPress={toggleDateModal} />
+                  <FilterPill icon="location-outline" label={locationLabel} onPress={toggleLocationModal} />
+                  <FilterPill icon="swap-vertical-outline" label={distanceLabel} onPress={toggleDistanceModal} />
                   {/* Favorites pill shows total liked count */}
                   <Pressable
                     onPress={() => setOnlyFavorites((v) => !v)}
@@ -610,7 +655,7 @@ export default function DiscoverScreen() {
         {/* Race Types (multi-select) */}
         <Modal
           visible={typeOpen}
-          onDismiss={() => setTypeOpen(false)}
+          onDismiss={toggleTypeModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Race Types</Text>
@@ -644,7 +689,7 @@ export default function DiscoverScreen() {
               );
             })}
           </View>
-          <Button mode="contained" onPress={() => setTypeOpen(false)} style={{ marginTop: 12 }}>
+          <Button mode="contained" onPress={toggleTypeModal} style={{ marginTop: 12 }}>
             Apply
           </Button>
         </Modal>
@@ -652,7 +697,7 @@ export default function DiscoverScreen() {
         {/* Dates (single-select) */}
         <Modal
           visible={dateOpen}
-          onDismiss={() => setDateOpen(false)}
+          onDismiss={toggleDateModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Upcoming Dates</Text>
@@ -680,7 +725,7 @@ export default function DiscoverScreen() {
               );
             })}
           </View>
-          <Button mode="contained" onPress={() => setDateOpen(false)} style={{ marginTop: 12 }}>
+          <Button mode="contained" onPress={toggleDateModal} style={{ marginTop: 12 }}>
             Apply
           </Button>
         </Modal>
@@ -688,12 +733,12 @@ export default function DiscoverScreen() {
         {/* Location (text) */}
         <Modal
           visible={locOpen}
-          onDismiss={() => setLocOpen(false)}
+          onDismiss={toggleLocationModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Location</Text>
           <TextInput mode="outlined" placeholder="City or country…" value={locationText} onChangeText={setLocationText} />
-          <Button mode="contained" onPress={() => setLocOpen(false)} style={{ marginTop: 12 }}>
+          <Button mode="contained" onPress={toggleLocationModal} style={{ marginTop: 12 }}>
             Apply
           </Button>
         </Modal>
@@ -701,7 +746,7 @@ export default function DiscoverScreen() {
         {/* Distance (multi-select) */}
         <Modal
           visible={distOpen}
-          onDismiss={() => setDistOpen(false)}
+          onDismiss={toggleDistanceModal}
           contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.background }]}
         >
           <Text variant="titleMedium" style={{ marginBottom: 12 }}>Distance</Text>
@@ -749,7 +794,7 @@ export default function DiscoverScreen() {
               );
             })}
           </View>
-          <Button mode="contained" onPress={() => setDistOpen(false)} style={{ marginTop: 12 }}>
+          <Button mode="contained" onPress={toggleDistanceModal} style={{ marginTop: 12 }}>
             Apply
           </Button>
         </Modal>

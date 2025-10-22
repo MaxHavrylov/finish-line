@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, StyleSheet, Pressable, Linking, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Linking, Platform, Animated } from "react-native";
 import { 
   Card, Text, Button, Divider, Chip, ActivityIndicator, useTheme, Snackbar,
   Portal, Modal, TextInput
@@ -40,6 +40,9 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const [manageModalVisible, setManageModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const mounted = useRef(true);
+
+  // Animation state
+  const heartScale = useRef(new Animated.Value(1)).current;
 
   // My race state
   const [raceRecord, setRaceRecord] = useState<{ id: string; status: UserRaceStatus } | null>(null);
@@ -112,13 +115,27 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   }, [event.id]);
 
   const onToggleFav = useCallback(async () => {
+    // Trigger heart bump animation
+    Animated.sequence([
+      Animated.timing(heartScale, {
+        toValue: 1.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(heartScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      })
+    ]).start();
+
     const now = await toggleFavorite(event.id);
     if (mounted.current) setFav(now);
     // Notify previous screen to refresh favorites
     if (navigation && navigation.setParams) {
       navigation.setParams({ ...route.params, favoriteChanged: true });
     }
-  }, [event.id, navigation, route.params]);
+  }, [event.id, navigation, route.params, heartScale]);
 
   const handleOpenInMaps = useCallback(() => {
     if (details && details.lat && details.lng) {
@@ -413,11 +430,13 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                   opacity: pressed ? 0.7 : 1 
                 })}
               > 
-                <Ionicons
-                  name={fav ? "heart" : "heart-outline"}
-                  size={22}
-                  color={fav ? theme.colors.error : theme.colors.onSurface}
-                />
+                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+                  <Ionicons
+                    name={fav ? "heart" : "heart-outline"}
+                    size={22}
+                    color={fav ? theme.colors.error : theme.colors.onSurface}
+                  />
+                </Animated.View>
               </Pressable>
             )}
           />
