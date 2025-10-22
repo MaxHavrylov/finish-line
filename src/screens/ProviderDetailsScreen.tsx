@@ -296,7 +296,7 @@ export default function ProviderDetailsScreen() {
           })
         }
       >
-        {item.coverImage && <Card.Cover source={{ uri: item.coverImage }} />}
+        {item.coverImage && <Card.Cover source={{ uri: item.coverImage }} style={styles.cardCover} />}
         <Card.Title
           title={item.title}
           subtitle={new Date(item.startDate).toDateString()}
@@ -470,6 +470,10 @@ const styles = StyleSheet.create({
   eventCard: {
     borderRadius: 12,
     overflow: 'hidden',
+    elevation: 1,
+  },
+  cardCover: {
+    aspectRatio: 16 / 9,
   },
   chipRow: {
     flexDirection: 'row',
@@ -478,7 +482,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chip: {
-    marginBottom: 4,
   },
   emptyState: {
     flex: 1,

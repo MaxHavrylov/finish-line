@@ -578,7 +578,7 @@ export default function DiscoverScreen() {
                 })
               }
             >
-              {e.coverImage && <Card.Cover source={{ uri: e.coverImage }} />}
+              {e.coverImage && <Card.Cover source={{ uri: e.coverImage }} style={styles.cardCover} />}
               <Card.Title
                 title={e.title}
                 subtitle={new Date(e.startDate).toDateString()}
@@ -602,7 +602,7 @@ export default function DiscoverScreen() {
                     {[e.city, e.country].filter(Boolean).join(", ")}
                   </Text>
                 )}
-                <View style={[styles.row, { marginTop: 6 }]}>
+                <View style={styles.row}>
                   <Chip
                     style={[styles.tagChip, { backgroundColor: categoryColor + "22", borderColor: categoryColor }]}
                     textStyle={{ color: categoryColor }}
@@ -857,9 +857,17 @@ const styles = StyleSheet.create({
   },
 
   // Cards
-  card: { borderRadius: 16, marginHorizontal: H_PADDING },
-  row: { flexDirection: "row", alignItems: "center" },
-  tagChip: { marginRight: 8, borderWidth: 1 },
+  card: { 
+    borderRadius: 12, 
+    marginHorizontal: H_PADDING, 
+    elevation: 1,
+    overflow: 'hidden'
+  },
+  cardCover: {
+    aspectRatio: 16 / 9,
+  },
+  row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  tagChip: { borderWidth: 1 },
 
   // FAB
   fab: { position: "absolute", right: H_PADDING, bottom: 24, elevation: 4 },

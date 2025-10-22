@@ -651,7 +651,8 @@ const styles = StyleSheet.create({
   raceCard: {
     marginBottom: 8,
     borderRadius: 12,
-    elevation: 2
+    elevation: 1,
+    overflow: 'hidden'
   },
   pastRaceHeader: {
     flexDirection: 'row',

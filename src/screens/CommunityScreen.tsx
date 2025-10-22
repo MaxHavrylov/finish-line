@@ -51,7 +51,7 @@ function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: ()
   }, [runner.id, theme.colors]);
 
   return (
-    <Card style={styles.card} mode="outlined">
+    <Card style={styles.card}>
       <Card.Content style={styles.cardContent}>
         <Avatar.Text 
           size={50} 
@@ -266,6 +266,9 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 12,
+    borderRadius: 12,
+    elevation: 1,
+    overflow: 'hidden',
   },
   cardContent: {
     flexDirection: "row",
