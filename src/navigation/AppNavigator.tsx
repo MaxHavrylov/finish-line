@@ -35,11 +35,11 @@ function DiscoverStack() {
         component={EventDetailsScreen}
         options={({ navigation, route }) => ({
           title: "Event Details",
-          headerLeft: () => (
+          headerLeft: ({ tintColor }) => (
             <Ionicons 
               name="chevron-back" 
               size={24} 
-              color="#007AFF"
+              color={tintColor}
               onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'DiscoverTab')}
             />
           ),
@@ -51,11 +51,11 @@ function DiscoverStack() {
         component={ProviderDetailsScreen}
         options={({ navigation, route }) => ({
           title: "Provider Details",
-          headerLeft: () => (
+          headerLeft: ({ tintColor }) => (
             <Ionicons 
               name="chevron-back" 
               size={24} 
-              color="#007AFF"
+              color={tintColor}
               onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'DiscoverTab')}
             />
           ),
@@ -79,11 +79,11 @@ function MyRacesStack() {
         component={EventDetailsScreen}
         options={({ navigation, route }) => ({
           title: "Event Details",
-          headerLeft: () => (
+          headerLeft: ({ tintColor }) => (
             <Ionicons 
               name="chevron-back" 
               size={24} 
-              color="#007AFF"
+              color={tintColor}
               onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'MyRaces')}
             />
           ),
@@ -108,11 +108,11 @@ function CommunityStack() {
         component={RunnerDetailsScreen}
         options={({ navigation, route }) => ({
           title: t('viewRunner'),
-          headerLeft: () => (
+          headerLeft: ({ tintColor }) => (
             <Ionicons 
               name="chevron-back" 
               size={24} 
-              color="#007AFF"
+              color={tintColor}
               onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'Community')}
             />
           ),
