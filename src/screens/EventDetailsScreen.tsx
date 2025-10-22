@@ -473,6 +473,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                         disabled={followLoading}
                         testID="btn-follow-provider"
                         style={{ marginRight: 8 }}
+                        icon={isFollowingProvider ? "bell-off" : "bell-plus"}
                       >
                         {t(isFollowingProvider ? 'unfollowProvider' : 'followProvider')}
                       </Button>
@@ -485,6 +486,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                             provider.website && Linking.openURL(provider.website);
                           }}
                           testID="btn-provider-website"
+                          icon="open-in-new"
                         >
                           {t('website')}
                         </Button>
@@ -520,6 +522,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                   style={styles.registerButton}
                   contentStyle={styles.buttonContent}
                   disabled={!details?.registrationUrl}
+                  icon="launch"
                 >
                   {t('registerNow')}
                 </Button>
@@ -553,7 +556,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                 <Button
                   mode="outlined"
                   onPress={handleAddToCalendar}
-                  icon="calendar"
+                  icon="calendar-plus"
                   style={styles.utilityButton}
                   contentStyle={styles.buttonContent}
                   loading={calendarLoading}

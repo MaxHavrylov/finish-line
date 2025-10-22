@@ -265,6 +265,7 @@ export default function MyRacesScreen() {
               handleAddResult(item);
             }}
             testID="btn-add-result"
+            icon="plus"
           >
             {t('addResult')}
           </Button>

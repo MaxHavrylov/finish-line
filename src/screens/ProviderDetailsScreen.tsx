@@ -254,6 +254,7 @@ export default function ProviderDetailsScreen() {
               testID="btn-follow-provider"
               style={{ marginRight: 8 }}
               accessibilityLabel={t(isFollowing ? 'unfollowProvider' : 'followProvider')}
+              icon={isFollowing ? "bell-off" : "bell-plus"}
             >
               {t(isFollowing ? 'unfollowProvider' : 'followProvider')}
             </Button>
@@ -265,6 +266,7 @@ export default function ProviderDetailsScreen() {
                 testID="btn-provider-website"
                 style={{ marginRight: 8 }}
                 accessibilityLabel={t('website')}
+                icon="open-in-new"
               >
                 {t('website')}
               </Button>
