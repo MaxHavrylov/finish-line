@@ -11,6 +11,7 @@ import {
 } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { navigateBackOrTo } from "@/navigation/AppNavigator";
 import { mockRunners, Runner } from "@/data/mockRunners";
 import * as followsRepo from "@/repositories/followsRepo";
 

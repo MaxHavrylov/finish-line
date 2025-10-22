@@ -33,12 +33,34 @@ function DiscoverStack() {
       <Stack.Screen
         name="EventDetails"
         component={EventDetailsScreen}
-        options={{ title: "Event Details" }}
+        options={({ navigation, route }) => ({
+          title: "Event Details",
+          headerLeft: () => (
+            <Ionicons 
+              name="chevron-back" 
+              size={24} 
+              color="#007AFF"
+              onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'DiscoverTab')}
+            />
+          ),
+        })}
+        initialParams={{ fromTab: 'DiscoverTab' }}
       />
       <Stack.Screen
         name="ProviderDetails"
         component={ProviderDetailsScreen}
-        options={{ title: "Provider Details" }}
+        options={({ navigation, route }) => ({
+          title: "Provider Details",
+          headerLeft: () => (
+            <Ionicons 
+              name="chevron-back" 
+              size={24} 
+              color="#007AFF"
+              onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'DiscoverTab')}
+            />
+          ),
+        })}
+        initialParams={{ fromTab: 'DiscoverTab' }}
       />
     </Stack.Navigator>
   );
@@ -55,7 +77,18 @@ function MyRacesStack() {
       <Stack.Screen
         name="EventDetails"
         component={EventDetailsScreen}
-        options={{ title: "Event Details" }}
+        options={({ navigation, route }) => ({
+          title: "Event Details",
+          headerLeft: () => (
+            <Ionicons 
+              name="chevron-back" 
+              size={24} 
+              color="#007AFF"
+              onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'MyRaces')}
+            />
+          ),
+        })}
+        initialParams={{ fromTab: 'MyRaces' }}
       />
     </Stack.Navigator>
   );
@@ -73,7 +106,18 @@ function CommunityStack() {
       <Stack.Screen
         name="RunnerDetails"
         component={RunnerDetailsScreen}
-        options={{ title: t('viewRunner') }}
+        options={({ navigation, route }) => ({
+          title: t('viewRunner'),
+          headerLeft: () => (
+            <Ionicons 
+              name="chevron-back" 
+              size={24} 
+              color="#007AFF"
+              onPress={() => navigateBackOrTo(navigation, (route.params as any)?.fromTab || 'Community')}
+            />
+          ),
+        })}
+        initialParams={{ fromTab: 'Community' }}
       />
     </Stack.Navigator>
   );
@@ -98,6 +142,31 @@ function SettingsStack() {
 }
 
 const Tab = createBottomTabNavigator();
+
+// Utility function to handle proper back navigation for detail screens
+export function navigateBackOrTo(navigation: any, fallbackTab: string) {
+  if (navigation.canGoBack()) {
+    navigation.goBack();
+  } else {
+    // Navigate to the fallback tab's root screen
+    switch (fallbackTab) {
+      case 'DiscoverTab':
+        navigation.navigate('DiscoverTab', { screen: 'Discover' });
+        break;
+      case 'MyRaces':
+        navigation.navigate('MyRaces', { screen: 'MyRacesList' });
+        break;
+      case 'Community':
+        navigation.navigate('Community', { screen: 'CommunityList' });
+        break;
+      case 'Settings':
+        navigation.navigate('Settings', { screen: 'SettingsList' });
+        break;
+      default:
+        navigation.navigate('DiscoverTab', { screen: 'Discover' });
+    }
+  }
+}
 
 export default function AppNavigator() {
   const paperTheme = usePaperTheme();

@@ -16,6 +16,7 @@ import { providersRepo } from "@/repositories/providersRepo";
 import { trackProviderFollow, trackProviderUnfollow } from "@/services/analytics";
 import { addNotification } from "@/repositories/notificationsRepo";
 import { useModalBackClose } from "@/hooks/useModalBackClose";
+import { navigateBackOrTo } from "@/navigation/AppNavigator";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };

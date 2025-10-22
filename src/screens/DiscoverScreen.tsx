@@ -417,7 +417,7 @@ export default function DiscoverScreen() {
         <View style={{ flex: 1 }}>
           <MapView 
             events={filtered}
-            onMarkerPress={(event: EventSummary) => navigation.navigate("EventDetails", { eventId: event.id })}
+            onMarkerPress={(event: EventSummary) => navigation.navigate("EventDetails", { eventId: event.id, fromTab: 'DiscoverTab' })}
             loading={refreshing}
           />
           
