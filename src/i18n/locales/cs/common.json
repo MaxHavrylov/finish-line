@@ -94,6 +94,7 @@
   "markAllRead": "Označit vše jako přečtené",
   "noNotifications": "Zatím žádná oznámení",
   "registerNow": "Registrovat",
+  "offlineNotice": "Bez připojení k internetu",
   "notif": {
     "followProviderTitle": "Sledujete {{provider}}",
     "followProviderBody": "Budete dostávat aktualizace o jejich událostech"

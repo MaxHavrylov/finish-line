@@ -21,6 +21,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { mockRunners, Runner } from "@/data/mockRunners";
+import OfflineBanner from '../components/OfflineBanner';
 
 const PAGE_SIZE = 20;
 
@@ -167,6 +168,7 @@ export default function CommunityScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <OfflineBanner />
       <StatusBar />
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>{t('community')}</Text>

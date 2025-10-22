@@ -35,6 +35,7 @@ import { isWithinDays } from "../utils/date";
 import { listFavoriteIds, toggleFavorite } from "../repositories/favoritesRepo";
 import { trackDiscoverToggleMap } from "../services/analytics";
 import MapView from "../components/MapView";
+import OfflineBanner from "../components/OfflineBanner";
 
 // ---- Config / constants
 type DateFilter = "Any" | "30d" | "90d";
@@ -384,6 +385,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      <OfflineBanner />
       {/* Header */}
       <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
         <Text variant="headlineSmall" style={styles.headerTitle}>{t('discoverTitle')}</Text>

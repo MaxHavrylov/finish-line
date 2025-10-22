@@ -89,6 +89,7 @@
   "markAllRead": "Mark all read",
   "noNotifications": "No notifications yet",
   "registerNow": "Register Now",
+  "offlineNotice": "No internet connection",
   "notif": {
     "followProviderTitle": "Following {{provider}}",
     "followProviderBody": "You will receive updates about their events"

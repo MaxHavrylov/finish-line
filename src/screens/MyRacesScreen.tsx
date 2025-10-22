@@ -8,6 +8,7 @@ import { listFollowing } from '@/repositories/followsRepo';
 import { resultsRepo, type FriendResult } from '@/repositories/resultsRepo';
 import { trackResultAdded, trackResultViewCompare } from '@/services/analytics';
 import type { FutureUserRace, PastUserRace } from '@/types/events';
+import OfflineBanner from '../components/OfflineBanner';
 
 type PastRaceWithMeta = PastUserRace & { 
   isPR?: boolean;
@@ -543,6 +544,7 @@ export default function MyRacesScreen() {
       styles.container,
       { flexDirection: isNarrow ? 'column' : 'row' }
     ]}>
+      <OfflineBanner />
       {renderResultModal()}
       
       {/* Tabs */}

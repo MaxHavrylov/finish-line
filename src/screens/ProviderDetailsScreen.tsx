@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import type { EventCategory, EventSummary } from '@/types/events';
+import OfflineBanner from '../components/OfflineBanner';
 import { View, StyleSheet, FlatList, Linking, RefreshControl } from "react-native";
 import { 
   Card, Text, Button, ActivityIndicator, useTheme, Divider, Chip, TextInput, SegmentedButtons
@@ -420,6 +422,7 @@ export default function ProviderDetailsScreen() {
 
   return (
     <View style={styles.container} testID="provider-header">
+      <OfflineBanner />
       {renderFilters()}
       <FlatList
         data={providerData.events}

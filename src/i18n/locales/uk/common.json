@@ -89,6 +89,7 @@
   "markAllRead": "Позначити все як прочитане",
   "noNotifications": "Сповіщень поки немає",
   "registerNow": "Зареєструватися",
+  "offlineNotice": "Немає підключення до інтернету",
   "notif": {
     "followProviderTitle": "Ви підписались на {{provider}}",
     "followProviderBody": "Ви будете отримувати оновлення про їхні події"
