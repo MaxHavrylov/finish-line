@@ -363,15 +363,15 @@ export default function DiscoverScreen() {
 
   // labels with counts
   const typesLabel =
-    selectedCategories.length > 0 ? `Race Types (${selectedCategories.length})` : "Race Types";
-  const datesLabel = dateFilter === "Any" ? "Upcoming Dates" : "Upcoming Dates (1)";
-  const locationLabel = locationText.trim().length > 0 ? "Location (1)" : "Location";
+    selectedCategories.length > 0 ? `${t('raceTypes')} (${selectedCategories.length})` : t('raceTypes');
+  const datesLabel = dateFilter === "Any" ? t('upcomingDates') : `${t('upcomingDates')} (1)`;
+  const locationLabel = locationText.trim().length > 0 ? `${t('location')} (1)` : t('location');
   const distanceLabel =
-    selectedDistances.length > 0 ? `Distance (${selectedDistances.length})` : "Distance";
+    selectedDistances.length > 0 ? `${t('distance')} (${selectedDistances.length})` : t('distance');
 
   // ⭐ Favorites label shows the total count of liked events, regardless of toggle
   const favoritesCount = favoriteIds.size;
-  const favoritesLabel = favoritesCount > 0 ? `Favorites (${favoritesCount})` : "Favorites";
+  const favoritesLabel = favoritesCount > 0 ? `${t('favorites')} (${favoritesCount})` : t('favorites');
 
   if (loading) {
     return (
@@ -386,9 +386,14 @@ export default function DiscoverScreen() {
     <View style={{ flex: 1 }}>
       {/* Header */}
       <View style={[styles.headerWrap, { backgroundColor: theme.colors.background }]}>
-        <Text variant="headlineSmall" style={styles.headerTitle}>Discover</Text>
+        <Text variant="headlineSmall" style={styles.headerTitle}>{t('discoverTitle')}</Text>
         <View style={styles.headerActions}>
-          <Pressable hitSlop={8} onPress={toggleView} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+          <Pressable 
+            hitSlop={8} 
+            onPress={toggleView} 
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            accessibilityLabel={isMapView ? t('showList') : t('showMap')}
+          >
             <Ionicons 
               name={isMapView ? "list-outline" : "map-outline"} 
               size={22} 
@@ -451,7 +456,7 @@ export default function DiscoverScreen() {
           if ("__type" in item) {
             return (
               <View style={styles.filtersWrap}>
-                <Text variant="titleMedium" style={styles.filtersTitle}>Filter Events</Text>
+                <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
 
                 <View style={styles.filtersGrid}>
                   <FilterPill icon="pulse-outline" label={typesLabel} onPress={() => setTypeOpen(true)} />
@@ -483,11 +488,23 @@ export default function DiscoverScreen() {
                 <View style={styles.filtersBottomRow}>
                   <Pressable onPress={resetFilters} style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}>
                     <Ionicons name="filter-outline" size={16} color={GREEN} />
-                    <Text style={[styles.resetText, { color: GREEN }]}>Reset Filters</Text>
+                    <Text style={[styles.resetText, { color: GREEN }]}>{t('resetFilters')}</Text>
                   </Pressable>
                 </View>
 
                 <View style={{ height: 8 }} />
+                
+                {/* Empty state when no events match filters */}
+                {filtered.length === 0 && (
+                  <View style={styles.emptyState}>
+                    <Text variant="titleMedium" style={styles.emptyTitle}>
+                      {t('noResults')}
+                    </Text>
+                    <Button mode="outlined" onPress={resetFilters} style={styles.emptyButton}>
+                      {t('tryReset')}
+                    </Button>
+                  </View>
+                )}
               </View>
             );
           }
@@ -568,6 +585,7 @@ export default function DiscoverScreen() {
           );
         }}
           ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
+
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           onScroll={onScroll}
           scrollEventThrottle={16}
@@ -723,7 +741,7 @@ export default function DiscoverScreen() {
                     }
                   ]}
                 >
-                  {d === "<=5" ? "≤ 5 km" : d === "5-10" ? "5–10 km" : "> 10 km"}
+                  {d === "<=5" ? t('distanceLe5') : d === "5-10" ? t('distance5to10') : t('distanceGt10')}
                 </Chip>
               );
             })}
@@ -828,5 +846,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
 
-  center: { alignItems: "center", justifyContent: "center" }
+  center: { alignItems: "center", justifyContent: "center" },
+  
+  // Empty state
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: H_PADDING,
+    paddingVertical: 32
+  },
+  emptyTitle: {
+    textAlign: "center",
+    marginBottom: 16,
+    opacity: 0.7
+  },
+  emptyButton: {
+    marginTop: 8
+  }
 });
