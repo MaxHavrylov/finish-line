@@ -476,27 +476,38 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             {provider && (
               <>
                 <Divider style={{ marginVertical: 8 }} />
-                <Pressable 
-                  style={styles.providerSection} 
-                  testID="provider-block"
-                  onPress={() => (navigation as any).navigate("ProviderDetails", { 
-                    providerId: provider.id, 
-                    fromTab: (route.params as any)?.fromTab || 'DiscoverTab' 
-                  })}
-                >
-                  <Text variant="titleMedium">{t('eventOrganizer')}</Text>
-                  <View style={styles.providerContainer}>
-                    <View style={styles.providerInfo}>
-                      <Text variant="titleSmall">{provider.name}</Text>
-                    </View>
+                <View testID="provider-block">
+                  <Text variant="titleMedium" style={{ marginBottom: spacing.xs }}>{t('eventOrganizer')}</Text>
+                  <Card style={styles.providerCard}>
+                    <Pressable
+                      style={styles.providerPressable}
+                      onPress={() => (navigation as any).navigate("ProviderDetails", { 
+                        providerId: provider.id, 
+                        fromTab: (route.params as any)?.fromTab || 'DiscoverTab' 
+                      })}
+                      testID="provider-navigate"
+                      android_ripple={{ color: theme.colors.primary, radius: 300 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <View style={styles.providerMainContent}>
+                        <View style={styles.providerInfo}>
+                          <Text variant="titleSmall">{provider.name}</Text>
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                            {t('viewProvider')}
+                          </Text>
+                        </View>
+                        <Ionicons 
+                          name="chevron-forward" 
+                          size={20} 
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      </View>
+                    </Pressable>
                     <View style={styles.providerButtons}>
                       <Button
                         mode={isFollowingProvider ? "outlined" : "contained"}
                         compact
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleToggleFollowProvider();
-                        }}
+                        onPress={handleToggleFollowProvider}
                         loading={followLoading}
                         disabled={followLoading}
                         testID="btn-follow-provider"
@@ -509,10 +520,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                         <Button
                           mode="contained"
                           compact
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            provider.website && Linking.openURL(provider.website);
-                          }}
+                          onPress={() => provider.website && Linking.openURL(provider.website)}
                           testID="btn-provider-website"
                           icon="open-in-new"
                         >
@@ -520,8 +528,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                         </Button>
                       )}
                     </View>
-                  </View>
-                </Pressable>
+                  </Card>
+                </View>
               </>
             )}
 
@@ -703,10 +711,26 @@ const styles = StyleSheet.create({
   },
   providerInfo: {
     flex: 1,
-    marginRight: spacing.md,
   },
   providerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  providerCard: {
+    marginVertical: spacing.xs,
+    elevation: 2,
+  },
+  providerPressable: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: 44,
+  },
+  providerMainContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   }
 });

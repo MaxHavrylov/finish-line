@@ -31,6 +31,7 @@
   "follow": "Follow",
   "unfollow": "Unfollow",
   "provider": "Provider",
+  "viewProvider": "View provider",
   "followProvider": "Follow provider",
   "unfollowProvider": "Unfollow provider",
   "website": "Website",
