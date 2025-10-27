@@ -21,7 +21,8 @@ import { spacing } from '@/theme';
 import { useSnackbar } from "../components/useSnackbar";
 
 type EventParam = {
-  event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
+  event?: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
+  eventId?: string;
   favoriteChanged?: boolean;
 };
 
@@ -29,7 +30,11 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const theme = useTheme();
   const { t } = useTranslation();
   const { showError, showSuccess } = useSnackbar();
-  const { event } = route.params as EventParam;
+  const params = route.params as EventParam;
+  
+  // Handle both event object (from navigation) and eventId (from deep link)
+  const eventId = params.event?.id || params.eventId;
+  const event = params.event;
   
   // UI state
   const [details, setDetails] = useState<EventDetails | null>(null);
@@ -80,22 +85,27 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     loadInFlight.current = true;
     (async () => {
       try {
-        console.log('[EventDetails] Loading event:', event.id);
+        if (!eventId) {
+          console.error('[EventDetails] No eventId provided');
+          return;
+        }
+        
+        console.log('[EventDetails] Loading event:', eventId);
         
         console.log('[EventDetails] Calling getEventById...');
-        const d = await getEventById(event.id);
+        const d = await getEventById(eventId);
         console.log('[EventDetails] getEventById result:', !!d);
         
         console.log('[EventDetails] Calling isFavorite...');
-        const f = await isFavorite(event.id);
+        const f = await isFavorite(eventId);
         console.log('[EventDetails] isFavorite result:', f);
         
         console.log('[EventDetails] Calling userRacesRepo.getByEventId...');
-        const r = await userRacesRepo.getByEventId(event.id);
+        const r = await userRacesRepo.getByEventId(eventId);
         console.log('[EventDetails] userRacesRepo result:', !!r);
         
         console.log('[EventDetails] Calling providersRepo.getProviderByEventId...');
-        const p = await providersRepo.getProviderByEventId(event.id);
+        const p = await providersRepo.getProviderByEventId(eventId);
         console.log('[EventDetails] providersRepo result:', !!p);
         
         console.log('[EventDetails] All calls completed, setting state...');
@@ -109,7 +119,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           setDetails(d);
           console.log('[EventDetails] Details set successfully');
         } else {
-          console.warn('[EventDetails] No details found for event:', event.id);
+          console.warn('[EventDetails] No details found for event:', eventId);
         }
         setFav(f);
         setRaceRecord(r);
@@ -132,7 +142,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         loadInFlight.current = false;
       }
     })();
-  }, [event.id]);
+  }, [eventId]);
 
   const onToggleFav = useCallback(async () => {
     // Trigger heart bump animation
@@ -149,19 +159,19 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       })
     ]).start();
 
-    const now = await toggleFavorite(event.id);
+    const now = await toggleFavorite(eventId!);
     if (mounted.current) setFav(now);
     // Notify previous screen to refresh favorites
     if (navigation && navigation.setParams) {
       navigation.setParams({ ...route.params, favoriteChanged: true });
     }
-  }, [event.id, navigation, route.params, heartScale]);
+  }, [eventId, navigation, route.params, heartScale]);
 
   const handleOpenInMaps = useCallback(() => {
     if (details && details.lat && details.lng) {
       const lat = details.lat;
       const lng = details.lng;
-      const label = encodeURIComponent(event.title);
+      const label = encodeURIComponent(details?.title || event?.title || 'Event');
       let url = '';
       if (Platform.OS === 'ios') {
         url = `http://maps.apple.com/?ll=${lat},${lng}&q=${label}`;
@@ -173,7 +183,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       Linking.openURL(url);
     } else {
       // Fallback: search by title/location
-      const query = encodeURIComponent(`${event.title} ${event.location}`);
+      const query = encodeURIComponent(`${details?.title || event?.title || 'Event'} ${details?.city || event?.location || ''}`);
       Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
     }
   }, [details, event]);
@@ -183,18 +193,21 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     setCalendarLoading(true);
     try {
       const { granted } = await ensureCalendarAccess();
-      const date = new Date(event.date);
+      const eventDate = details?.startDate || event?.date;
+      if (!eventDate) return;
+      
+      const date = new Date(eventDate);
       const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9, 0, 0);
       const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
       if (granted) {
         await createEvent({
-          title: event.title,
+          title: details?.title || event?.title || 'Event',
           startDate: start,
           endDate: end,
-          location: event.location,
-          notes: details.descriptionMarkdown,
-          url: details.registrationUrl
+          location: details?.city || event?.location || '',
+          notes: details?.descriptionMarkdown || '',
+          url: details?.registrationUrl || ''
         });
         setSnackbarMessage(t('eventAddedToCalendar'));
         setSnackbarVisible(true);
@@ -212,7 +225,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const handleImGoing = useCallback(async () => {
     setSaving(true);
     try {
-      const id = await userRacesRepo.saveFutureRace(event.id);
+      const id = await userRacesRepo.saveFutureRace(eventId!);
       if (mounted.current) {
         setRaceRecord({ id, status: 'FUTURE' });
       }
@@ -222,7 +235,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     } finally {
       if (mounted.current) setSaving(false);
     }
-  }, [event.id, t]);
+  }, [eventId, t]);
 
   const handleManageSave = useCallback(async () => {
     if (!raceRecord) return;
@@ -410,33 +423,33 @@ export default function EventDetailsScreen({ route, navigation }: any) {
 
       {details ? (
         <Card style={styles.card}>
-          {event.image ? (
-            <Card.Cover source={{ uri: event.image }} />
+          {(details?.coverImage || event?.image) ? (
+            <Card.Cover source={{ uri: details?.coverImage || event?.image }} />
           ) : (
             <View style={styles.mapContainer}>
               <MapView
                 style={StyleSheet.absoluteFill}
                 initialRegion={{
-                  latitude: details.lat ?? 53.7168,
-                  longitude: details.lng ?? -6.3533,
+                  latitude: details?.lat ?? 53.7168,
+                  longitude: details?.lng ?? -6.3533,
                   latitudeDelta: 0.05,
                   longitudeDelta: 0.05
                 }}
               >
                 <Marker 
                   coordinate={{ 
-                    latitude: details.lat ?? 53.7168, 
-                    longitude: details.lng ?? -6.3533 
+                    latitude: details?.lat ?? 53.7168, 
+                    longitude: details?.lng ?? -6.3533 
                   }} 
-                  title={event.title} 
+                  title={details?.title || event?.title || 'Event'} 
                 />
               </MapView>
             </View>
           )}
 
           <Card.Title
-            title={event.title}
-            subtitle={event.location}
+            title={details?.title || event?.title || 'Event Details'}
+            subtitle={details?.city || event?.location || ''}
             right={() => (
               <Pressable 
                 onPress={onToggleFav} 
@@ -459,8 +472,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           />
 
           <Card.Content>
-            <Text variant="bodyMedium">Date: {new Date(event.date).toLocaleString()}</Text>
-            <Text variant="bodyMedium">Category: {event.category}</Text>
+            <Text variant="bodyMedium">Date: {new Date(details?.startDate || event?.date || '').toLocaleString()}</Text>
+            <Text variant="bodyMedium">Category: {details?.eventCategory || event?.category || ''}</Text>
 
             {provider && (
               <>

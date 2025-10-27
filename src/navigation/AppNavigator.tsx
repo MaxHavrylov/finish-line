@@ -143,6 +143,7 @@ function SettingsStack() {
 }
 
 const Tab = createBottomTabNavigator();
+const RootStack = createNativeStackNavigator();
 
 // Utility function to handle proper back navigation for detail screens
 export function navigateBackOrTo(navigation: any, fallbackTab: string) {
@@ -169,15 +170,27 @@ export function navigateBackOrTo(navigation: any, fallbackTab: string) {
   }
 }
 
-export default function AppNavigator() {
+const linking = {
+  prefixes: ["finishline://"],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          DiscoverTab: {
+            screens: {
+              EventDetails: "event/:eventId"
+            }
+          }
+        }
+      },
+      ProviderDetails: "provider/:providerId"
+    }
+  }
+} as const;
+
+function TabNavigator() {
   const paperTheme = usePaperTheme();
   const { t } = useTranslation('common');
-
-  // Prefetch lightweight data at startup for instant interactions
-  useEffect(() => {
-    // Run prefetch in background - non-blocking
-    prefetchStartupData();
-  }, []);
 
   // Helper function to create tab press listeners that reset to root screen
   const createTabPressListener = (tabName: string, rootScreenName: string) => ({
@@ -194,6 +207,61 @@ export default function AppNavigator() {
     }
   });
 
+  return (
+    <Tab.Navigator
+      initialRouteName="DiscoverTab"
+      detachInactiveScreens={true}
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: paperTheme.colors.primary,
+        tabBarInactiveTintColor: paperTheme.colors.onSurfaceDisabled,
+        tabBarIcon: ({ color, size }) => {
+          let icon: keyof typeof Ionicons.glyphMap = "home";
+          if (route.name === "DiscoverTab") icon = "compass";
+          if (route.name === "MyRaces") icon = "trophy";
+          if (route.name === "Community") icon = "people";
+          if (route.name === "Settings") icon = "settings";
+          return <Ionicons name={icon} size={size} color={color} />;
+        }
+      })}
+    >
+      <Tab.Screen
+        name="DiscoverTab"
+        component={DiscoverStack}
+        options={{ title: "Discover" }}
+        listeners={createTabPressListener('DiscoverTab', 'Discover')}
+      />
+      <Tab.Screen 
+        name="MyRaces" 
+        component={MyRacesStack} 
+        options={{ title: t('myRaces') }}
+        listeners={createTabPressListener('MyRaces', 'MyRacesList')}
+      />
+      <Tab.Screen 
+        name="Community" 
+        component={CommunityStack} 
+        options={{ title: t('community') }}
+        listeners={createTabPressListener('Community', 'CommunityList')}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsStack} 
+        options={{ title: t('settings') }}
+        listeners={createTabPressListener('Settings', 'SettingsList')}
+      />
+    </Tab.Navigator>
+  );
+}
+
+export default function AppNavigator() {
+  const paperTheme = usePaperTheme();
+
+  // Prefetch lightweight data at startup for instant interactions
+  useEffect(() => {
+    // Run prefetch in background - non-blocking
+    prefetchStartupData();
+  }, []);
+
   const navTheme: NavTheme = {
     dark: paperTheme.dark,
     colors: {
@@ -209,49 +277,29 @@ export default function AppNavigator() {
   } as unknown as NavTheme;
 
   return (
-    <NavigationContainer theme={navTheme}>
-      <Tab.Navigator
-        initialRouteName="DiscoverTab"
-        detachInactiveScreens={true}
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: paperTheme.colors.primary,
-          tabBarInactiveTintColor: paperTheme.colors.onSurfaceDisabled,
-          tabBarIcon: ({ color, size }) => {
-            let icon: keyof typeof Ionicons.glyphMap = "home";
-            if (route.name === "DiscoverTab") icon = "compass";
-            if (route.name === "MyRaces") icon = "trophy";
-            if (route.name === "Community") icon = "people";
-            if (route.name === "Settings") icon = "settings";
-            return <Ionicons name={icon} size={size} color={color} />;
-          }
-        })}
-      >
-        <Tab.Screen
-          name="DiscoverTab"
-          component={DiscoverStack}
-          options={{ title: "Discover" }}
-          listeners={createTabPressListener('DiscoverTab', 'Discover')}
+    <NavigationContainer theme={navTheme} linking={linking}>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen 
+          name="MainTabs" 
+          component={TabNavigator}
         />
-        <Tab.Screen 
-          name="MyRaces" 
-          component={MyRacesStack} 
-          options={{ title: t('myRaces') }}
-          listeners={createTabPressListener('MyRaces', 'MyRacesList')}
+        <RootStack.Screen 
+          name="ProviderDetails" 
+          component={ProviderDetailsScreen}
+          options={({ navigation, route }) => ({
+            headerShown: true,
+            title: "Provider Details",
+            headerLeft: ({ tintColor }) => (
+              <Ionicons 
+                name="chevron-back" 
+                size={24} 
+                color={tintColor}
+                onPress={() => navigateBackOrTo(navigation, 'DiscoverTab')}
+              />
+            ),
+          })}
         />
-        <Tab.Screen 
-          name="Community" 
-          component={CommunityStack} 
-          options={{ title: t('community') }}
-          listeners={createTabPressListener('Community', 'CommunityList')}
-        />
-        <Tab.Screen 
-          name="Settings" 
-          component={SettingsStack} 
-          options={{ title: t('settings') }}
-          listeners={createTabPressListener('Settings', 'SettingsList')}
-        />
-      </Tab.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 }
