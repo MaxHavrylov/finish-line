@@ -1,5 +1,11 @@
 // repositories/favoritesRepo.ts
 import { getDb } from "../db";
+import { 
+  getCachedFavoriteIds, 
+  isCachedFavorite, 
+  updateCachedFavorite,
+  setCachedFavoriteIds 
+} from "../utils/prefetchCache";
 
 const TABLE = "favorites";
 
@@ -14,6 +20,13 @@ export async function listFavoriteIds(): Promise<Set<string>> {
 }
 
 export async function isFavorite(eventId: string): Promise<boolean> {
+  // Try cache first for instant access
+  const cached = isCachedFavorite(eventId);
+  if (cached !== null) {
+    return cached;
+  }
+
+  // Fall back to database if not cached
   const db = getDb();
   const row = db.getFirstSync<{ event_id: string } | undefined>(
     `SELECT event_id FROM ${TABLE} WHERE event_id = ? LIMIT 1`,
@@ -35,6 +48,8 @@ export async function toggleFavorite(eventId: string): Promise<boolean> {
     if (fav) {
       db.runSync(`DELETE FROM ${TABLE} WHERE event_id = ?`, [eventId]);
       db.execSync("COMMIT");
+      // Update cache optimistically for instant UI feedback
+      updateCachedFavorite(eventId, false);
       return false;
     } else {
       db.runSync(
@@ -42,6 +57,8 @@ export async function toggleFavorite(eventId: string): Promise<boolean> {
         [eventId, Date.now()]
       );
       db.execSync("COMMIT");
+      // Update cache optimistically for instant UI feedback
+      updateCachedFavorite(eventId, true);
       return true;
     }
   } catch (e) {

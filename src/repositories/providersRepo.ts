@@ -1,4 +1,9 @@
 import { getDb } from '@/db';
+import { 
+  getCachedFollowedProviders, 
+  isCachedFollowed, 
+  updateCachedFollowed 
+} from '../utils/prefetchCache';
 
 /**
  * Repository for provider-related operations
@@ -181,6 +186,13 @@ export const providersRepo = {
    * Check if user is following a provider
    */
   async isFollowing(userId: string, providerId: string): Promise<boolean> {
+    // Try cache first for instant access
+    const cached = isCachedFollowed(providerId);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Fall back to database if not cached
     try {
       const database = getDb();
       const result = database.getFirstSync<{ count: number }>(
@@ -204,6 +216,8 @@ export const providersRepo = {
         'INSERT OR IGNORE INTO provider_follows (userId, providerId, created_at) VALUES (?, ?, ?)',
         [userId, providerId, new Date().toISOString()]
       );
+      // Update cache optimistically for instant UI feedback
+      updateCachedFollowed(providerId, true);
     } catch (error) {
       console.warn('[providersRepo] Failed to follow provider (table may not exist yet):', error);
       throw error;
@@ -220,9 +234,30 @@ export const providersRepo = {
         'DELETE FROM provider_follows WHERE userId = ? AND providerId = ?',
         [userId, providerId]
       );
+      // Update cache optimistically for instant UI feedback
+      updateCachedFollowed(providerId, false);
     } catch (error) {
       console.warn('[providersRepo] Failed to unfollow provider (table may not exist yet):', error);
       throw error;
+    }
+  },
+
+  /**
+   * Get list of followed provider IDs for a user (for prefetch)
+   */
+  async listFollowedIds(userId: string): Promise<Set<string>> {
+    try {
+      const database = getDb();
+      const rows = database.getAllSync<{ providerId: string }>(
+        'SELECT providerId FROM provider_follows WHERE userId = ?',
+        [userId]
+      );
+      const set = new Set<string>();
+      rows.forEach(row => set.add(row.providerId));
+      return set;
+    } catch (error) {
+      console.warn('[providersRepo] Failed to list followed providers (table may not exist yet):', error);
+      return new Set(); // Return empty set if table doesn't exist
     }
   }
 };

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,7 @@ import SettingsScreen from "../screens/SettingsScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme as usePaperTheme } from "react-native-paper";
+import { prefetchStartupData } from "../utils/prefetch";
 
 const Stack = createNativeStackNavigator();
 
@@ -171,6 +172,12 @@ export function navigateBackOrTo(navigation: any, fallbackTab: string) {
 export default function AppNavigator() {
   const paperTheme = usePaperTheme();
   const { t } = useTranslation('common');
+
+  // Prefetch lightweight data at startup for instant interactions
+  useEffect(() => {
+    // Run prefetch in background - non-blocking
+    prefetchStartupData();
+  }, []);
 
   // Helper function to create tab press listeners that reset to root screen
   const createTabPressListener = (tabName: string, rootScreenName: string) => ({

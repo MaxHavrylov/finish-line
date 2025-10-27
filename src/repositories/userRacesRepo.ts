@@ -1,5 +1,6 @@
 import { getDb } from "@/db";
 import type { FutureUserRace, PastUserRace, UserRaceStatus } from "../types/events";
+import { getCachedFutureRaces, setCachedFutureRaces } from "../utils/prefetchCache";
 
 // Simple UUID v4 generator (matches pattern in codebase)
 function generateUUID(): string {
@@ -45,6 +46,15 @@ export async function saveFutureRace(
       ]
     );
     db.execSync("COMMIT");
+    
+    // Refresh future races cache after adding new race
+    try {
+      const updatedRaces = await listFuture();
+      setCachedFutureRaces(updatedRaces);
+    } catch (error) {
+      console.warn('[userRacesRepo] Failed to refresh cache after saving race:', error);
+    }
+    
     return id;
   } catch (e) {
     db.execSync("ROLLBACK");
@@ -155,6 +165,16 @@ export async function markAsPast(id: string, resultTimeSeconds?: number): Promis
 export async function getByEventId(
   eventId: string
 ): Promise<{ id: string; status: UserRaceStatus } | null> {
+  // Try cache first for future races (instant access for common case)
+  const cachedRaces = getCachedFutureRaces();
+  if (cachedRaces) {
+    const cachedRace = cachedRaces.find(race => race.eventId === eventId);
+    if (cachedRace) {
+      return { id: cachedRace.id, status: 'FUTURE' };
+    }
+  }
+
+  // Fall back to database for full query
   const db = getDb();
   return db.getFirstSync<{ id: string; status: UserRaceStatus }>(
     `SELECT id, status
