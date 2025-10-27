@@ -62,6 +62,12 @@ const COLORS_LIGHT = {
   onInfo: "#FFFFFF",
   infoContainer: "#E3F2FD", // Blue 50
   onInfoContainer: "#0D47A1", // Blue 900
+
+  // Call-to-Action (custom semantic color)
+  cta: "#FF6D00", // Deep Orange A400 - vivid and attention-grabbing
+  onCta: "#FFFFFF",
+  ctaContainer: "#FFF3E0", // Orange 50
+  onCtaContainer: "#E65100", // Orange 900
 };
 
 const COLORS_DARK = {
@@ -120,6 +126,12 @@ const COLORS_DARK = {
   onInfo: "#0D47A1",
   infoContainer: "#1976D2", // Blue 700
   onInfoContainer: "#BBDEFB", // Blue 100
+
+  // Call-to-Action (custom semantic color)
+  cta: "#FF8A50", // Deep Orange 300 - vibrant but accessible in dark mode
+  onCta: "#FFFFFF",
+  ctaContainer: "#BF360C", // Deep Orange 900
+  onCtaContainer: "#FFE0B2", // Orange 100
 };
 
 // Spacing scale (8px grid system)

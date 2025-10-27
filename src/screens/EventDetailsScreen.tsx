@@ -559,6 +559,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                   contentStyle={styles.buttonContent}
                   disabled={!details?.registrationUrl}
                   icon="launch"
+                  buttonColor={(theme.colors as any).cta}
+                  textColor={(theme.colors as any).onCta}
                 >
                   {t('registerNow')}
                 </Button>
@@ -658,7 +660,6 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     flex: 1,
-    backgroundColor: '#4CAF50', // Green color
   },
   primaryButton: {
     flex: 1,

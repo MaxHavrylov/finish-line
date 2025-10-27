@@ -41,6 +41,10 @@ declare module 'react-native-paper' {
       onInfo: string;
       infoContainer: string;
       onInfoContainer: string;
+      cta: string;
+      onCta: string;
+      ctaContainer: string;
+      onCtaContainer: string;
     };
   }
 }
