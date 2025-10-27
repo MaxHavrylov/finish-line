@@ -91,7 +91,14 @@ export async function markRead(id: string): Promise<void> {
  */
 export async function markAllRead(): Promise<void> {
   const db = getDb();
-  db.runSync(`UPDATE notifications SET read = 1`);
+  db.execSync("BEGIN");
+  try {
+    db.runSync(`UPDATE notifications SET read = 1`);
+    db.execSync("COMMIT");
+  } catch (e) {
+    db.execSync("ROLLBACK");
+    throw e;
+  }
 }
 
 /**
@@ -110,7 +117,14 @@ export async function getUnreadCount(): Promise<number> {
  */
 export async function deleteAll(): Promise<void> {
   const db = getDb();
-  db.runSync(`DELETE FROM notifications`);
+  db.execSync("BEGIN");
+  try {
+    db.runSync(`DELETE FROM notifications`);
+    db.execSync("COMMIT");
+  } catch (e) {
+    db.execSync("ROLLBACK");
+    throw e;
+  }
 }
 
 /**

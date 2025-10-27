@@ -16,7 +16,14 @@ export function getDb(): SQLite.SQLiteDatabase {
 }
 
 function bootstrap(database: SQLite.SQLiteDatabase) {
+  // Enable WAL mode for better concurrency and performance
   database.execSync(`PRAGMA journal_mode = WAL;`);
+  
+  // Additional performance optimizations
+  database.execSync(`PRAGMA synchronous = NORMAL;`); // Faster than FULL, still safe with WAL
+  database.execSync(`PRAGMA cache_size = 2000;`); // Increase cache size for better performance
+  database.execSync(`PRAGMA temp_store = memory;`); // Keep temp tables in memory
+  
   // app meta
   database.execSync(`
     CREATE TABLE IF NOT EXISTS app_meta (
@@ -24,8 +31,13 @@ function bootstrap(database: SQLite.SQLiteDatabase) {
       value TEXT
     );
   `);
+  
   // ✅ pass db instance to avoid require cycle
   runMigrations(database);
+  
+  // Log successful WAL mode and index setup
+  const walMode = database.getFirstSync<{ journal_mode: string }>('PRAGMA journal_mode');
+  console.log('[db] WAL ON; indexes ok - Journal mode:', walMode?.journal_mode);
   
   // Diagnostic logging
   try {

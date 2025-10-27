@@ -61,6 +61,7 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_events_start_date ON events(start_date);
     CREATE INDEX IF NOT EXISTS idx_events_category ON events(event_category);
     CREATE INDEX IF NOT EXISTS idx_events_updated_at ON events(updated_at);
+    CREATE INDEX IF NOT EXISTS idx_events_deleted_at ON events(deleted_at);
 
     CREATE TABLE IF NOT EXISTS event_distances (
       id TEXT PRIMARY KEY NOT NULL,
@@ -234,6 +235,18 @@ export function runMigrations(db: SQLite.SQLiteDatabase) {
 
     CREATE INDEX idx_notifications_created ON notifications(createdAt DESC);
     CREATE INDEX idx_notifications_read ON notifications(read);
+    `
+  );
+
+  // 010 - additional performance indexes
+  apply(
+    "010_performance_indexes",
+    `
+    -- Additional indexes for optimal query performance
+    CREATE INDEX IF NOT EXISTS idx_events_deleted_at_start_date ON events(deleted_at, start_date) WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_event_providers_composite ON event_providers(eventId, providerId);
+    CREATE INDEX IF NOT EXISTS idx_provider_follows_composite ON provider_follows(userId, providerId);
+    CREATE INDEX IF NOT EXISTS idx_user_races_composite ON user_races(event_id, status);
     `
   );
 }
