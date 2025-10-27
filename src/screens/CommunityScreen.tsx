@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -26,7 +26,7 @@ import { spacing } from '@/theme';
 
 const PAGE_SIZE = 20;
 
-function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: () => void }) {
+const RunnerCard = React.memo(function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: () => void }) {
   const { t } = useTranslation('common');
   const theme = useTheme();
   
@@ -84,7 +84,12 @@ function RunnerCard({ runner, onViewRunner }: { runner: Runner, onViewRunner: ()
       </Card.Content>
     </Card>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.runner.id === nextProps.runner.id &&
+         prevProps.runner.name === nextProps.runner.name &&
+         prevProps.runner.location === nextProps.runner.location &&
+         JSON.stringify(prevProps.runner.stats) === JSON.stringify(nextProps.runner.stats);
+});
 
 export default function CommunityScreen() {
   const navigation = useNavigation();
@@ -162,6 +167,30 @@ export default function CommunityScreen() {
     />
   ), [handleViewRunner]);
 
+  // Performance optimizations
+  const keyExtractor = useCallback((item: Runner) => item.id, []);
+  const endReachedInFlight = useRef(false);
+  
+  // Estimate item layout for performance - RunnerCard height is approximately 100px + margins
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 116, // Card height ~100px + marginBottom 16px from styles
+    offset: 116 * index,
+    index,
+  }), []);
+
+  const optimizedHandleEndReached = useCallback(() => {
+    if (endReachedInFlight.current) return;
+    if (paginatedRunners.length < filteredRunners.length) {
+      endReachedInFlight.current = true;
+      setIsLoading(true);
+      setTimeout(() => {
+        setPage(prev => prev + 1);
+        setIsLoading(false);
+        endReachedInFlight.current = false;
+      }, 500);
+    }
+  }, [paginatedRunners.length, filteredRunners.length]);
+
   const toggleLocationFilter = useCallback((location: string) => {
     setLocationFilter(prev => prev === location ? '' : location);
     setPage(1); // Reset pagination when filter changes
@@ -209,10 +238,15 @@ export default function CommunityScreen() {
       <FlatList
         data={paginatedRunners}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.list}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
+        onEndReached={optimizedHandleEndReached}
+        onEndReachedThreshold={0.5}
+        initialNumToRender={10}
+        maxToRenderPerBatch={12}
+        windowSize={8}
+        removeClippedSubviews={true}
+        getItemLayout={getItemLayout}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 

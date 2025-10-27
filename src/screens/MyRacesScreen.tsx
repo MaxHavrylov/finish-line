@@ -218,32 +218,20 @@ export default function MyRacesScreen() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }, []);
 
-  // Render items
-  const renderFutureRace = useCallback(({ item }: { item: FutureUserRace & {
-    title: string;
-    minDistanceLabel?: string;
-    eventCategory: string;
-  } }) => {
-    if (!item || !item.eventId) {
-      console.warn('renderFutureRace: Invalid item', item);
-      return null;
-    }
-    
+  // Memoized components for performance
+  const FutureRaceCard = React.memo(function FutureRaceCard({ 
+    item, 
+    onPress, 
+    onAddResult 
+  }: { 
+    item: FutureUserRace & { title: string; minDistanceLabel?: string; eventCategory: string }, 
+    onPress: () => void, 
+    onAddResult: () => void 
+  }) {
     return (
       <Card 
         style={styles.raceCard}
-        onPress={() => navigation.navigate('EventDetails', { 
-          fromTab: 'MyRaces',
-          event: {
-            id: item.eventId,
-            title: item.title,
-            date: new Date().toISOString(), // We don't have the actual date in race data
-            location: '',
-            category: item.eventCategory,
-            distance: item.minDistanceLabel || '',
-            image: undefined
-          }
-        })}
+        onPress={onPress}
         testID="myraces-item"
       >
         <Card.Content>
@@ -263,7 +251,7 @@ export default function MyRacesScreen() {
             mode="contained"
             onPress={(e) => {
               e.stopPropagation();
-              handleAddResult(item);
+              onAddResult();
             }}
             testID="btn-add-result"
             icon="plus"
@@ -273,7 +261,42 @@ export default function MyRacesScreen() {
         </Card.Actions>
       </Card>
     );
-  }, [handleAddResult, t, navigation]);
+  });
+
+  // Render items
+  const renderFutureRace = useCallback(({ item }: { item: FutureUserRace & {
+    title: string;
+    minDistanceLabel?: string;
+    eventCategory: string;
+  } }) => {
+    if (!item || !item.eventId) {
+      console.warn('renderFutureRace: Invalid item', item);
+      return null;
+    }
+    
+    const handlePress = () => navigation.navigate('EventDetails', { 
+      fromTab: 'MyRaces',
+      event: {
+        id: item.eventId,
+        title: item.title,
+        date: new Date().toISOString(),
+        location: '',
+        category: item.eventCategory,
+        distance: item.minDistanceLabel || '',
+        image: undefined
+      }
+    });
+
+    const handleAddResultPress = () => handleAddResult(item);
+    
+    return (
+      <FutureRaceCard 
+        item={item} 
+        onPress={handlePress}
+        onAddResult={handleAddResultPress}
+      />
+    );
+  }, [handleAddResult, navigation]);
 
   const renderPastRace = useCallback(({ item }: { item: PastRaceWithMeta }) => {
     if (!item || !item.eventId) {
@@ -536,6 +559,17 @@ export default function MyRacesScreen() {
     </Portal>
   );
 
+  // Performance optimizations - must be before conditional returns
+  const keyExtractor = useCallback((item: any) => item.id, []);
+  const ItemSeparatorComponent = useCallback(() => <View style={{ height: 8 }} />, []);
+  
+  // getItemLayout for smooth scrolling performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 128, // Estimated height for race cards (Card.Content + Card.Actions)
+    offset: 128 * index,
+    index,
+  }), []);
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -593,10 +627,15 @@ export default function MyRacesScreen() {
           testID={activeTab === 'future' ? 'list-future' : 'list-past'}
           data={currentData}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={keyExtractor}
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          ItemSeparatorComponent={ItemSeparatorComponent}
+          initialNumToRender={10}
+          maxToRenderPerBatch={12}
+          windowSize={8}
+          removeClippedSubviews={true}
+          getItemLayout={getItemLayout}
           onScroll={onScroll}
           scrollEventThrottle={16}
           refreshControl={

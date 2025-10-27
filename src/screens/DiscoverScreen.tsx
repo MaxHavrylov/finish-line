@@ -421,6 +421,122 @@ export default function DiscoverScreen() {
   const favoritesCount = favoriteIds.size;
   const favoritesLabel = favoritesCount > 0 ? `${t('favorites')} (${favoritesCount})` : t('favorites');
 
+  // Performance optimizations - must be before conditional returns
+  const ItemSeparatorComponent = useCallback(() => <Divider style={{ marginVertical: 8 }} />, []);
+  
+  const keyExtractor = useCallback((item: any, index: number) => {
+    return ("__type" in item ? "__filters" : item.id) + "-" + index;
+  }, []);
+
+  // getItemLayout for smooth scrolling performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 185, // Estimated height for event cards (Card.Cover + Card.Title + Card.Content)
+    offset: 185 * index,
+    index,
+  }), []);
+
+  const handleEventPress = useCallback((event: EventSummary) => {
+    navigation.navigate("EventDetails", {
+      eventId: event.id,
+      fromTab: 'DiscoverTab'
+    });
+  }, [navigation]);
+
+  // Stable renderItem function to avoid hook order issues
+  const renderItem = useCallback(({ item }: { item: any }) => {
+    if ("__type" in item) {
+      return (
+        <View style={styles.filtersWrap}>
+          <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
+
+          <View style={styles.filtersGrid}>
+            <FilterPill icon="pulse-outline" label={typesLabel} onPress={toggleTypeModal} />
+            <FilterPill icon="calendar-outline" label={datesLabel} onPress={toggleDateModal} />
+            <FilterPill icon="location-outline" label={locationLabel} onPress={toggleLocationModal} />
+            <FilterPill icon="swap-vertical-outline" label={distanceLabel} onPress={toggleDistanceModal} />
+            {/* Favorites pill shows total liked count */}
+            <Pressable
+              onPress={() => setOnlyFavorites((v) => !v)}
+              style={({ pressed }) => [
+                styles.pill,
+                pressed && { opacity: 0.85 },
+                onlyFavorites && { backgroundColor: theme.colors.secondaryContainer }
+              ]}
+              hitSlop={6}
+            >
+              <Ionicons
+                name={onlyFavorites ? "heart" : "heart-outline"}
+                size={16}
+                color={onlyFavorites ? theme.colors.error : theme.colors.onSurface}
+                style={{ marginRight: spacing.sm }}
+              />
+              <Text variant="labelMedium" style={{ color: onlyFavorites ? theme.colors.error : theme.colors.onSurface }}>
+                {favoritesLabel}
+              </Text>
+            </Pressable>
+          </View>
+
+          {filtered.length > 0 && (
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 8 }}>
+              {filtered.length} {filtered.length === 1 ? t('eventFound') : t('eventsFound')}
+            </Text>
+          )}
+
+          <Button mode="text" compact onPress={resetFilters} testID="clear-all-filters">
+            {t('clearAll')}
+          </Button>
+        </View>
+      );
+    }
+
+    const e = item as EventSummary;
+    const categoryColor = CATEGORY_COLORS[e.eventCategory] ?? GREEN;
+    const isFav = favoriteIds.has(e.id);
+
+    const handlePress = () => navigation.navigate("EventDetails", {
+      fromTab: 'DiscoverTab',
+      event: {
+        id: e.id,
+        title: e.title,
+        date: e.startDate,
+        location: [e.city, e.country].filter(Boolean).join(", "),
+        category: e.eventCategory,
+        distance: e.minDistanceLabel ?? "",
+        image: e.coverImage ?? "https://picsum.photos/seed/fl/1200/600"
+      }
+    });
+
+    const handleToggleFav = () => onToggleFav(e.id);
+
+    return (
+      <EventCard 
+        event={e}
+        isFav={isFav}
+        categoryColor={categoryColor}
+        onPress={handlePress}
+        onToggleFav={handleToggleFav}
+      />
+    );
+  }, [
+    t, 
+    typesLabel, 
+    datesLabel, 
+    locationLabel, 
+    distanceLabel, 
+    favoritesLabel,
+    onlyFavorites, 
+    theme.colors, 
+    filtered.length, 
+    favoriteIds, 
+    navigation,
+    toggleTypeModal, 
+    toggleDateModal, 
+    toggleLocationModal, 
+    toggleDistanceModal, 
+    resetFilters, 
+    onToggleFav
+  ]);
+
   if (loading) {
     return (
       <View style={[styles.center, { flex: 1, padding: spacing.lg }]}>
@@ -429,6 +545,75 @@ export default function DiscoverScreen() {
       </View>
     );
   }
+
+  // Memoized event card component 
+  const EventCard = React.memo(function EventCard({ 
+    event, 
+    isFav, 
+    categoryColor, 
+    onPress, 
+    onToggleFav 
+  }: { 
+    event: EventSummary, 
+    isFav: boolean, 
+    categoryColor: string, 
+    onPress: () => void, 
+    onToggleFav: () => void 
+  }) {
+    return (
+      <Card style={styles.card} onPress={onPress}>
+        {event.coverImage && <Card.Cover source={{ uri: event.coverImage }} style={styles.cardCover} />}
+        <Card.Title
+          title={event.title}
+          subtitle={new Date(event.startDate).toDateString()}
+          right={() => (
+            <Pressable
+              hitSlop={8}
+              onPress={onToggleFav}
+              style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons
+                name={isFav ? "heart" : "heart-outline"}
+                size={22}
+                color={isFav ? theme.colors.error : theme.colors.onSurface}
+              />
+            </Pressable>
+          )}
+        />
+        <Card.Content>
+          {!!(event.city || event.country) && (
+            <Text variant="bodyMedium" style={{ marginBottom: spacing.sm }}>
+              {[event.city, event.country].filter(Boolean).join(", ")}
+            </Text>
+          )}
+          <View style={styles.row}>
+            <Chip
+              style={[styles.tagChip, { backgroundColor: categoryColor + "22", borderColor: categoryColor }]}
+              textStyle={{ color: categoryColor }}
+              mode="outlined"
+            >
+              {event.eventCategory}
+            </Chip>
+            {event.minDistanceLabel ? (
+              <Chip
+                style={[styles.tagChip, { backgroundColor: theme.colors.elevation.level1 }]}
+              >
+                {event.minDistanceLabel}
+              </Chip>
+            ) : null}
+            {event.providerName ? (
+              <Chip
+                style={[styles.tagChip, { backgroundColor: theme.colors.surfaceVariant }]}
+                testID="chip-provider"
+              >
+                {event.providerName}
+              </Chip>
+            ) : null}
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  });
 
   return (
     <View style={{ flex: 1 }}>
@@ -498,141 +683,14 @@ export default function DiscoverScreen() {
         <FlatList
           ref={listRef}
           data={dataWithFilters}
-          keyExtractor={(item, index) =>
-            ("__type" in item ? "__filters" : item.id) + "-" + index
-          }
-        renderItem={({ item }) => {
-          if ("__type" in item) {
-            return (
-              <View style={styles.filtersWrap}>
-                <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
-
-                <View style={styles.filtersGrid}>
-                  <FilterPill icon="pulse-outline" label={typesLabel} onPress={toggleTypeModal} />
-                  <FilterPill icon="calendar-outline" label={datesLabel} onPress={toggleDateModal} />
-                  <FilterPill icon="location-outline" label={locationLabel} onPress={toggleLocationModal} />
-                  <FilterPill icon="swap-vertical-outline" label={distanceLabel} onPress={toggleDistanceModal} />
-                  {/* Favorites pill shows total liked count */}
-                  <Pressable
-                    onPress={() => setOnlyFavorites((v) => !v)}
-                    style={({ pressed }) => [
-                      styles.pill,
-                      pressed && { opacity: 0.85 },
-                      onlyFavorites && { backgroundColor: theme.colors.secondaryContainer }
-                    ]}
-                    hitSlop={6}
-                  >
-                    <Ionicons
-                      name={onlyFavorites ? "heart" : "heart-outline"}
-                      size={16}
-                      color={onlyFavorites ? theme.colors.error : theme.colors.onSurface}
-                      style={{ marginRight: spacing.sm }}
-                    />
-                    <Text variant="labelMedium" numberOfLines={1} style={{ opacity: 0.9 }}>
-                      {favoritesLabel}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View style={styles.filtersBottomRow}>
-                  <Pressable onPress={resetFilters} style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.7 }]}>
-                    <Ionicons name="filter-outline" size={16} color={GREEN} />
-                    <Text variant="labelLarge" style={{ color: GREEN, marginLeft: 6 }}>{t('resetFilters')}</Text>
-                  </Pressable>
-                </View>
-
-                <View style={{ height: 8 }} />
-                
-                {/* Empty state when no events match filters */}
-                {filtered.length === 0 && (
-                  <View style={styles.emptyState}>
-                    <Text variant="titleMedium" style={styles.emptyTitle}>
-                      {t('noResults')}
-                    </Text>
-                    <Button mode="outlined" onPress={resetFilters} style={styles.emptyButton}>
-                      {t('tryReset')}
-                    </Button>
-                  </View>
-                )}
-              </View>
-            );
-          }
-
-          const e = item as EventSummary;
-          const categoryColor = CATEGORY_COLORS[e.eventCategory] ?? GREEN;
-          const isFav = favoriteIds.has(e.id);
-
-          return (
-            <Card
-              style={styles.card}
-              onPress={() =>
-                navigation.navigate("EventDetails", {
-                  fromTab: 'DiscoverTab',
-                  event: {
-                    id: e.id,
-                    title: e.title,
-                    date: e.startDate,
-                    location: [e.city, e.country].filter(Boolean).join(", "),
-                    category: e.eventCategory,
-                    distance: e.minDistanceLabel ?? "",
-                    image: e.coverImage ?? "https://picsum.photos/seed/fl/1200/600"
-                  }
-                })
-              }
-            >
-              {e.coverImage && <Card.Cover source={{ uri: e.coverImage }} style={styles.cardCover} />}
-              <Card.Title
-                title={e.title}
-                subtitle={new Date(e.startDate).toDateString()}
-                right={() => (
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => onToggleFav(e.id)}
-                    style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.7 : 1 }]}
-                  >
-                    <Ionicons
-                      name={isFav ? "heart" : "heart-outline"}
-                      size={22}
-                      color={isFav ? theme.colors.error : theme.colors.onSurface}
-                    />
-                  </Pressable>
-                )}
-              />
-              <Card.Content>
-                {!!(e.city || e.country) && (
-                  <Text variant="bodyMedium" style={{ marginBottom: spacing.sm }}>
-                    {[e.city, e.country].filter(Boolean).join(", ")}
-                  </Text>
-                )}
-                <View style={styles.row}>
-                  <Chip
-                    style={[styles.tagChip, { backgroundColor: categoryColor + "22", borderColor: categoryColor }]}
-                    textStyle={{ color: categoryColor }}
-                    mode="outlined"
-                  >
-                    {e.eventCategory}
-                  </Chip>
-                  {e.minDistanceLabel ? (
-                    <Chip
-                      style={[styles.tagChip, { backgroundColor: theme.colors.elevation.level1 }]}
-                    >
-                      {e.minDistanceLabel}
-                    </Chip>
-                  ) : null}
-                  {e.providerName ? (
-                    <Chip
-                      style={[styles.tagChip, { backgroundColor: theme.colors.surfaceVariant }]}
-                      testID="chip-provider"
-                    >
-                      {e.providerName}
-                    </Chip>
-                  ) : null}
-                </View>
-              </Card.Content>
-            </Card>
-          );
-        }}
-          ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          initialNumToRender={10}
+          maxToRenderPerBatch={12}
+          windowSize={8}
+          removeClippedSubviews={true}
+          getItemLayout={getItemLayout}
+          ItemSeparatorComponent={ItemSeparatorComponent}
 
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} testID="refresh-discover" />}
           onScroll={onScroll}

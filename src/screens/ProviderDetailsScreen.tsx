@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import type { EventCategory, EventSummary } from '@/types/events';
 import OfflineBanner from '../components/OfflineBanner';
 import { View, StyleSheet, FlatList, Linking, RefreshControl } from "react-native";
@@ -180,11 +180,26 @@ export default function ProviderDetailsScreen() {
     loadProviderData(1, true, false);
   }, [loadProviderData, refreshing]);
 
+  // Performance optimizations
+  const endReachedInFlight = useRef(false);
   const handleLoadMore = useCallback(() => {
+    if (endReachedInFlight.current) return;
     if (!loadingMore && hasMorePages && providerData) {
+      endReachedInFlight.current = true;
       loadProviderData(currentPage + 1, false, true);
+      setTimeout(() => { endReachedInFlight.current = false; }, 300);
     }
   }, [loadingMore, hasMorePages, providerData, currentPage, loadProviderData]);
+
+  const keyExtractor = useCallback((item: any) => item.id, []);
+  const ItemSeparatorComponent = useCallback(() => <Divider style={{ marginVertical: 8 }} />, []);
+  
+  // getItemLayout for smooth scrolling performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 190, // Estimated height for event cards (Card.Cover + Card.Title + Card.Content)
+    offset: 190 * index,
+    index,
+  }), []);
 
   // Filter options
   const dateOptions = useMemo(() => [
@@ -277,27 +292,12 @@ export default function ProviderDetailsScreen() {
     }
   }, [providerData, isFollowing, followLoading, navigation, t, handleToggleFollow]);
 
-  const renderEvent = useCallback(({ item }: { item: any }) => {
+  // Memoized event card component
+  const EventCard = React.memo(function EventCard({ item, onPress }: { item: any, onPress: () => void }) {
     const location = [item.city, item.country].filter(Boolean).join(", ");
     
     return (
-      <Card
-        style={styles.eventCard}
-        onPress={() =>
-          (navigation as any).navigate("EventDetails", {
-            fromTab: (route.params as any)?.fromTab || 'DiscoverTab',
-            event: {
-              id: item.id,
-              title: item.title,
-              date: item.startDate,
-              location,
-              category: item.eventCategory,
-              distance: item.minDistanceLabel ?? "",
-              image: item.coverImage
-            }
-          })
-        }
-      >
+      <Card style={styles.eventCard} onPress={onPress}>
         {item.coverImage && <Card.Cover source={{ uri: item.coverImage }} style={styles.cardCover} />}
         <Card.Title
           title={item.title}
@@ -327,7 +327,24 @@ export default function ProviderDetailsScreen() {
         </Card.Content>
       </Card>
     );
-  }, [navigation, theme]);
+  });
+
+  const renderEvent = useCallback(({ item }: { item: any }) => {
+    const handlePress = () => (navigation as any).navigate("EventDetails", {
+      fromTab: (route.params as any)?.fromTab || 'DiscoverTab',
+      event: {
+        id: item.id,
+        title: item.title,
+        date: item.startDate,
+        location: [item.city, item.country].filter(Boolean).join(", "),
+        category: item.eventCategory,
+        distance: item.minDistanceLabel ?? "",
+        image: item.coverImage
+      }
+    });
+    
+    return <EventCard item={item} onPress={handlePress} />;
+  }, [navigation, route.params]);
 
   const renderFilters = useCallback(() => (
     <View style={styles.filtersContainer}>
@@ -429,12 +446,17 @@ export default function ProviderDetailsScreen() {
       <FlatList
         data={providerData.events}
         renderItem={renderEvent}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderListFooter}
-        ItemSeparatorComponent={() => <Divider style={{ marginVertical: 8 }} />}
+        ItemSeparatorComponent={ItemSeparatorComponent}
         contentContainerStyle={styles.listContent}
         testID="provider-events-list"
+        initialNumToRender={10}
+        maxToRenderPerBatch={12}
+        windowSize={8}
+        removeClippedSubviews={true}
+        getItemLayout={getItemLayout}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -443,7 +465,7 @@ export default function ProviderDetailsScreen() {
           />
         }
         onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.3}
+        onEndReachedThreshold={0.5}
       />
     </View>
   );
