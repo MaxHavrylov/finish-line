@@ -560,7 +560,19 @@ export default function DiscoverScreen() {
     if ("__type" in item) {
       return (
         <View style={styles.filtersWrap}>
-          <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+            <Text variant="titleMedium" style={styles.filtersTitle}>{t('filters')}</Text>
+            <Button 
+              mode="text" 
+              compact 
+              icon="filter-remove"
+              onPress={resetFilters} 
+              testID="clear-all-filters"
+              contentStyle={{ flexDirection: 'row-reverse' }}
+            >
+              {t('resetFilters')}
+            </Button>
+          </View>
 
           <View style={styles.filtersGrid}>
             <FilterPill icon="pulse-outline" label={typesLabel} onPress={toggleTypeModal} />
@@ -594,10 +606,6 @@ export default function DiscoverScreen() {
               {filtered.length} {filtered.length === 1 ? t('eventFound') : t('eventsFound')}
             </Text>
           )}
-
-          <Button mode="text" compact onPress={resetFilters} testID="clear-all-filters">
-            {t('clearAll')}
-          </Button>
         </View>
       );
     }
