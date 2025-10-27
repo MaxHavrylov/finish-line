@@ -15,9 +15,11 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as notificationsRepo from '@/repositories/notificationsRepo';
 import type { Notification } from '@/repositories/notificationsRepo';
+import { useSnackbar } from '../components/useSnackbar';
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
+  const { showError } = useSnackbar();
   const theme = useTheme();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -30,6 +32,7 @@ export default function NotificationsScreen() {
       setNotifications(data);
     } catch (error) {
       console.warn('Failed to load notifications:', error);
+      showError('Failed to load notifications');
     } finally {
       setLoading(false);
       setRefreshing(false);

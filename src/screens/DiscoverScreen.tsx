@@ -31,6 +31,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'react-native';
 import { saveFiltersDebounced, loadFilters } from "../utils/storage";
+import { useSnackbar } from "../components/useSnackbar";
 
 import { EventSummary, EventCategory } from "../types/events";
 import { seedMockIfEmpty, getEvents, listSummaries } from "../repositories/eventsRepo";
@@ -156,6 +157,7 @@ export default function DiscoverScreen() {
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList>(null);
   const { t } = useTranslation();
+  const { showError } = useSnackbar();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -211,10 +213,16 @@ export default function DiscoverScreen() {
       setEvents(data);
     } catch (error) {
       console.warn('[DiscoverScreen] Error loading events:', error);
+      showError('Failed to load events');
       // Fallback to getEvents if listSummaries fails
-      const data = await getEvents();
-      console.log('[DiscoverScreen] Fallback loaded events:', data.length);
-      setEvents(data);
+      try {
+        const data = await getEvents();
+        console.log('[DiscoverScreen] Fallback loaded events:', data.length);
+        setEvents(data);
+      } catch (fallbackError) {
+        console.warn('[DiscoverScreen] Fallback also failed:', fallbackError);
+        showError('Unable to load events. Please check your connection.');
+      }
     }
   }, []);
 
@@ -316,6 +324,7 @@ export default function DiscoverScreen() {
       await loadFavorites();
     } catch (error) {
       console.warn('[DiscoverScreen] Error during refresh:', error);
+      showError('Failed to refresh data');
     } finally {
       setRefreshing(false);
     }

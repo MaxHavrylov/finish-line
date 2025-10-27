@@ -11,6 +11,7 @@ import type { FutureUserRace, PastUserRace } from '@/types/events';
 import OfflineBanner from '../components/OfflineBanner';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { spacing } from '@/theme';
+import { useSnackbar } from '../components/useSnackbar';
 
 type PastRaceWithMeta = PastUserRace & { 
   isPR?: boolean;
@@ -24,6 +25,7 @@ export default function MyRacesScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const navigation = useNavigation<any>();
+  const { showError, showSuccess } = useSnackbar();
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
   
   // Data states
@@ -89,6 +91,7 @@ export default function MyRacesScreen() {
       setPastRaces(past);
     } catch (error) {
       console.warn('Failed to load races:', error);
+      showError('Failed to load your races');
     } finally {
       setLoading(false);
     }
@@ -161,6 +164,7 @@ export default function MyRacesScreen() {
       await loadData(); // Reload to update the lists
     } catch (error) {
       console.warn('Failed to save result:', error);
+      showError('Failed to save your result');
     } finally {
       setSaving(false);
     }

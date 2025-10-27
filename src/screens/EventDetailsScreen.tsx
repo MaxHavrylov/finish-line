@@ -18,6 +18,7 @@ import { addNotification } from "@/repositories/notificationsRepo";
 import { useModalBackClose } from "@/hooks/useModalBackClose";
 import { navigateBackOrTo } from "@/navigation/AppNavigator";
 import { spacing } from '@/theme';
+import { useSnackbar } from "../components/useSnackbar";
 
 type EventParam = {
   event: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
@@ -27,6 +28,7 @@ type EventParam = {
 export default function EventDetailsScreen({ route, navigation }: any) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { showError, showSuccess } = useSnackbar();
   const { event } = route.params as EventParam;
   
   // UI state
@@ -199,8 +201,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       }
     } catch (e) {
       console.warn('Failed to save race:', e);
-      setSnackbarMessage(t('errorSaving'));
-      setSnackbarVisible(true);
+      showError(t('errorSaving') || 'Failed to save race');
     } finally {
       if (mounted.current) setSaving(false);
     }
@@ -218,8 +219,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       setManageModalVisible(false);
     } catch (e) {
       console.warn('Failed to update race:', e);
-      setSnackbarMessage(t('errorSaving'));
-      setSnackbarVisible(true);
+      showError(t('errorSaving') || 'Failed to update race');
     } finally {
       if (mounted.current) setSaving(false);
     }
@@ -285,10 +285,9 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       // Revert on error
       if (mounted.current) {
         setIsFollowingProvider(wasFollowing);
-        setSnackbarMessage(t('errorSaving'));
-        setSnackbarVisible(true);
       }
       console.warn('Failed to toggle follow status:', error);
+      showError('Failed to update follow status');
     } finally {
       if (mounted.current) setFollowLoading(false);
     }
