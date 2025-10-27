@@ -29,6 +29,7 @@ import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/nativ
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { Image } from 'react-native';
 import { saveFiltersDebounced, loadFilters } from "../utils/storage";
 
 import { EventSummary, EventCategory } from "../types/events";
@@ -351,6 +352,36 @@ export default function DiscoverScreen() {
     });
   }, [events, onlyFavorites, favoriteIds, selectedCategories, dateFilter, locationText, selectedDistances]);
 
+  // Image preloading for off-screen events
+  const preloadImages = useCallback(async (events: EventSummary[]) => {
+    try {
+      const eventsWithImages = events.filter(event => event.coverImage);
+      const preloadPromises = eventsWithImages.map(event => {
+        try {
+          return Image.prefetch(event.coverImage!);
+        } catch (error) {
+          console.warn('[DiscoverScreen] Failed to prefetch image:', error);
+          return Promise.resolve();
+        }
+      });
+      
+      await Promise.allSettled(preloadPromises);
+    } catch (error) {
+      console.warn('[DiscoverScreen] Failed to preload images:', error);
+    }
+  }, []);
+
+  // Preload images for filtered events (throttled)
+  useEffect(() => {
+    if (!loading && filtered.length > 0) {
+      const timeoutId = setTimeout(() => {
+        preloadImages(filtered.slice(10, 30)); // Preload items 10-30 (after initial render)
+      }, 1000); // Delay to not interfere with initial render
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [filtered, loading, preloadImages]);
+
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setShowToTop(e.nativeEvent.contentOffset.y > 600);
   };
@@ -562,7 +593,17 @@ export default function DiscoverScreen() {
   }) {
     return (
       <Card style={styles.card} onPress={onPress}>
-        {event.coverImage && <Card.Cover source={{ uri: event.coverImage }} style={styles.cardCover} />}
+        {event.coverImage ? (
+          <Image
+            source={{ uri: event.coverImage }}
+            style={styles.cardCover}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          </View>
+        )}
         <Card.Title
           title={event.title}
           subtitle={new Date(event.startDate).toDateString()}
@@ -923,6 +964,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   cardCover: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#f5f5f5',
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
     aspectRatio: 16 / 9,
   },
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },

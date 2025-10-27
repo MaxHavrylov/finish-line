@@ -19,6 +19,7 @@
     "expo": "~54.0.9",
     "expo-calendar": "~15.0.7",
     "expo-file-system": "~19.0.14",
+    "expo-image": "^2.0.7",
     "expo-localization": "~17.0.7",
     "expo-sharing": "^14.0.7",
     "expo-sqlite": "~16.0.8",

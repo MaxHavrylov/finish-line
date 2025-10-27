@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import type { EventCategory, EventSummary } from '@/types/events';
 import OfflineBanner from '../components/OfflineBanner';
-import { View, StyleSheet, FlatList, Linking, RefreshControl } from "react-native";
+import { View, StyleSheet, FlatList, Linking, RefreshControl, Image } from "react-native";
 import { 
   Card, Text, Button, ActivityIndicator, useTheme, Divider, Chip, TextInput, SegmentedButtons
 } from "react-native-paper";
@@ -180,16 +180,48 @@ export default function ProviderDetailsScreen() {
     loadProviderData(1, true, false);
   }, [loadProviderData, refreshing]);
 
+  // Image preloading helper
+  const preloadNextImages = useCallback(async (currentEvents: any[]) => {
+    if (!providerData?.events || currentEvents.length === 0) return;
+    
+    try {
+      // Get next batch of events that might be loaded
+      const nextBatchStart = currentEvents.length;
+      const nextBatchEnd = Math.min(nextBatchStart + 12, providerData.events.length); // 12 matches maxToRenderPerBatch
+      const nextBatchEvents = providerData.events.slice(nextBatchStart, nextBatchEnd);
+      
+      // Prefetch images for the next batch
+      const preloadPromises = nextBatchEvents
+        .filter(event => event.coverImage)
+        .map(event => {
+          try {
+            return Image.prefetch(event.coverImage!);
+          } catch (error) {
+            console.warn('[ProviderDetailsScreen] Failed to prefetch image:', error);
+            return Promise.resolve(); // Don't let one failure stop others
+          }
+        });
+      
+      await Promise.allSettled(preloadPromises);
+    } catch (error) {
+      console.warn('[ProviderDetailsScreen] Failed to preload images:', error);
+    }
+  }, [providerData?.events]);
+
   // Performance optimizations
   const endReachedInFlight = useRef(false);
   const handleLoadMore = useCallback(() => {
     if (endReachedInFlight.current) return;
     if (!loadingMore && hasMorePages && providerData) {
       endReachedInFlight.current = true;
+      
+      // Preload images for next batch before loading more data
+      preloadNextImages(providerData.events);
+      
       loadProviderData(currentPage + 1, false, true);
       setTimeout(() => { endReachedInFlight.current = false; }, 300);
     }
-  }, [loadingMore, hasMorePages, providerData, currentPage, loadProviderData]);
+  }, [loadingMore, hasMorePages, providerData, currentPage, loadProviderData, preloadNextImages]);
 
   const keyExtractor = useCallback((item: any) => item.id, []);
   const ItemSeparatorComponent = useCallback(() => <Divider style={{ marginVertical: 8 }} />, []);
@@ -298,7 +330,17 @@ export default function ProviderDetailsScreen() {
     
     return (
       <Card style={styles.eventCard} onPress={onPress}>
-        {item.coverImage && <Card.Cover source={{ uri: item.coverImage }} style={styles.cardCover} />}
+        {item.coverImage ? (
+          <Image
+            source={{ uri: item.coverImage }}
+            style={styles.cardCover}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <ActivityIndicator size="small" />
+          </View>
+        )}
         <Card.Title
           title={item.title}
           subtitle={new Date(item.startDate).toDateString()}
@@ -497,6 +539,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardCover: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#f5f5f5',
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
     aspectRatio: 16 / 9,
   },
   chipRow: {
