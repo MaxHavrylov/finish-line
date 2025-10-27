@@ -52,7 +52,12 @@ const RunnerCard = React.memo(function RunnerCard({ runner, onViewRunner }: { ru
   }, [runner.id, theme.colors]);
 
   return (
-    <Card style={styles.card}>
+    <Card 
+      style={styles.card} 
+      onPress={onViewRunner}
+      accessibilityLabel={runner.name}
+      testID="community-item"
+    >
       <Card.Content style={styles.cardContent}>
         <Avatar.Text 
           size={50} 
@@ -73,14 +78,6 @@ const RunnerCard = React.memo(function RunnerCard({ runner, onViewRunner }: { ru
             </View>
           )}
         </View>
-        <Button
-          mode="outlined"
-          onPress={onViewRunner}
-          style={styles.viewButton}
-          accessibilityLabel={t('viewRunner')}
-        >
-          {t('viewRunner')}
-        </Button>
       </Card.Content>
     </Card>
   );
@@ -339,9 +336,6 @@ const styles = StyleSheet.create({
   },
   stats: {
     marginTop: spacing.xs,
-  },
-  viewButton: {
-    marginLeft: spacing.sm,
   },
   emptyState: {
     padding: spacing.xxl,
