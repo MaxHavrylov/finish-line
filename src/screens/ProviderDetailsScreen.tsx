@@ -391,16 +391,8 @@ export default function ProviderDetailsScreen() {
 
   const renderEvent = useCallback(({ item }: { item: any }) => {
     const handlePress = () => (navigation as any).navigate("EventDetails", {
-      fromTab: (route.params as any)?.fromTab || 'DiscoverTab',
-      event: {
-        id: item.id,
-        title: item.title,
-        date: item.startDate,
-        location: [item.city, item.country].filter(Boolean).join(", "),
-        category: item.eventCategory,
-        distance: item.minDistanceLabel ?? "",
-        image: item.coverImage
-      }
+      eventId: item.id,
+      fromTab: (route.params as any)?.fromTab || 'DiscoverTab'
     });
     
     return <EventCard item={item} onPress={handlePress} />;

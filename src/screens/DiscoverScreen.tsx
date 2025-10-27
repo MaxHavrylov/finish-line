@@ -607,16 +607,8 @@ export default function DiscoverScreen() {
     const isFav = favoriteIds.has(e.id);
 
     const handlePress = () => navigation.navigate("EventDetails", {
-      fromTab: 'DiscoverTab',
-      event: {
-        id: e.id,
-        title: e.title,
-        date: e.startDate,
-        location: [e.city, e.country].filter(Boolean).join(", "),
-        category: e.eventCategory,
-        distance: e.minDistanceLabel ?? "",
-        image: e.coverImage ?? "https://picsum.photos/seed/fl/1200/600"
-      }
+      eventId: e.id,
+      fromTab: 'DiscoverTab'
     });
 
     const handleToggleFav = () => onToggleFav(e.id);

@@ -21,8 +21,7 @@ import { spacing } from '@/theme';
 import { useSnackbar } from "../components/useSnackbar";
 
 type EventParam = {
-  event?: { id: string; title: string; date: string; location: string; category: string; distance: string; image?: string };
-  eventId?: string;
+  eventId: string;
   favoriteChanged?: boolean;
 };
 
@@ -32,9 +31,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const { showError, showSuccess } = useSnackbar();
   const params = route.params as EventParam;
   
-  // Handle both event object (from navigation) and eventId (from deep link)
-  const eventId = params.event?.id || params.eventId;
-  const event = params.event;
+  // Always derive eventId from params - consistent behavior
+  const eventId = params.eventId;
   
   // UI state
   const [details, setDetails] = useState<EventDetails | null>(null);
@@ -171,7 +169,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     if (details && details.lat && details.lng) {
       const lat = details.lat;
       const lng = details.lng;
-      const label = encodeURIComponent(details?.title || event?.title || 'Event');
+      const label = encodeURIComponent(details?.title || 'Event');
       let url = '';
       if (Platform.OS === 'ios') {
         url = `http://maps.apple.com/?ll=${lat},${lng}&q=${label}`;
@@ -183,17 +181,17 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       Linking.openURL(url);
     } else {
       // Fallback: search by title/location
-      const query = encodeURIComponent(`${details?.title || event?.title || 'Event'} ${details?.city || event?.location || ''}`);
+      const query = encodeURIComponent(`${details?.title || 'Event'} ${details?.city || ''}`);
       Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
     }
-  }, [details, event]);
+  }, [details]);
 
   const handleAddToCalendar = useCallback(async () => {
     if (!details) return;
     setCalendarLoading(true);
     try {
       const { granted } = await ensureCalendarAccess();
-      const eventDate = details?.startDate || event?.date;
+      const eventDate = details?.startDate;
       if (!eventDate) return;
       
       const date = new Date(eventDate);
@@ -202,10 +200,10 @@ export default function EventDetailsScreen({ route, navigation }: any) {
 
       if (granted) {
         await createEvent({
-          title: details?.title || event?.title || 'Event',
+          title: details?.title || 'Event',
           startDate: start,
           endDate: end,
-          location: details?.city || event?.location || '',
+          location: details?.city || '',
           notes: details?.descriptionMarkdown || '',
           url: details?.registrationUrl || ''
         });
@@ -219,7 +217,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     } finally {
       setCalendarLoading(false);
     }
-  }, [details, event, t]);
+  }, [details, t]);
 
   // Race management handlers
   const handleImGoing = useCallback(async () => {
@@ -423,8 +421,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
 
       {details ? (
         <Card style={styles.card}>
-          {(details?.coverImage || event?.image) ? (
-            <Card.Cover source={{ uri: details?.coverImage || event?.image }} />
+          {details?.coverImage ? (
+            <Card.Cover source={{ uri: details.coverImage }} />
           ) : (
             <View style={styles.mapContainer}>
               <MapView
@@ -441,15 +439,15 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                     latitude: details?.lat ?? 53.7168, 
                     longitude: details?.lng ?? -6.3533 
                   }} 
-                  title={details?.title || event?.title || 'Event'} 
+                  title={details?.title || 'Event'} 
                 />
               </MapView>
             </View>
           )}
 
           <Card.Title
-            title={details?.title || event?.title || 'Event Details'}
-            subtitle={details?.city || event?.location || ''}
+            title={details?.title || 'Event Details'}
+            subtitle={details?.city || ''}
             right={() => (
               <Pressable 
                 onPress={onToggleFav} 
@@ -472,8 +470,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           />
 
           <Card.Content>
-            <Text variant="bodyMedium">Date: {new Date(details?.startDate || event?.date || '').toLocaleString()}</Text>
-            <Text variant="bodyMedium">Category: {details?.eventCategory || event?.category || ''}</Text>
+            <Text variant="bodyMedium">Date: {details?.startDate ? new Date(details.startDate).toLocaleString() : 'TBD'}</Text>
+            <Text variant="bodyMedium">Category: {details?.eventCategory || ''}</Text>
 
             {provider && (
               <>

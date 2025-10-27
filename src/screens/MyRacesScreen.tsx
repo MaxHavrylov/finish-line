@@ -337,16 +337,8 @@ export default function MyRacesScreen() {
     }
     
     const handlePress = () => navigation.navigate('EventDetails', { 
-      fromTab: 'MyRaces',
-      event: {
-        id: item.eventId,
-        title: item.title,
-        date: new Date().toISOString(),
-        location: '',
-        category: item.eventCategory,
-        distance: item.minDistanceLabel || '',
-        image: undefined
-      }
+      eventId: item.eventId,
+      fromTab: 'MyRaces'
     });
 
     const handleAddResultPress = () => handleAddResult(item);
@@ -374,16 +366,8 @@ export default function MyRacesScreen() {
       <Card 
         style={styles.raceCard}
         onPress={() => navigation.navigate('EventDetails', { 
-          fromTab: 'MyRaces',
-          event: {
-            id: item.eventId,
-            title: item.title,
-            date: new Date().toISOString(), // We don't have the actual date in race data
-            location: '',
-            category: item.eventCategory,
-            distance: item.minDistanceLabel || '',
-            image: undefined
-          }
+          eventId: item.eventId,
+          fromTab: 'MyRaces'
         })}
         testID="myraces-item"
       >

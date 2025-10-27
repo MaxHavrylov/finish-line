@@ -170,7 +170,7 @@ export function navigateBackOrTo(navigation: any, fallbackTab: string) {
   }
 }
 
-const linking = {
+const linking: any = {
   prefixes: ["finishline://"],
   config: {
     screens: {
@@ -186,7 +186,7 @@ const linking = {
       ProviderDetails: "provider/:providerId"
     }
   }
-} as const;
+};
 
 function TabNavigator() {
   const paperTheme = usePaperTheme();
