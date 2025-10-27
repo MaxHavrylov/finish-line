@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card, Text, Switch, List, Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -36,6 +36,15 @@ export default function SettingsScreen() {
   const [eventReminders, setEventReminders] = useState<boolean>(true);
   const [communityUpdates, setCommunityUpdates] = useState<boolean>(true);
   const [communicationPrefs, setCommunicationPrefs] = useState<boolean>(false);
+  
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Load persisted non-theme settings
   useEffect(() => {
@@ -45,10 +54,12 @@ export default function SettingsScreen() {
       const com = await getItem<boolean>(STORAGE_KEYS.community);
       const cp = await getItem<boolean>(STORAGE_KEYS.comms);
 
-      if (lang) setLanguage(lang);
-      if (typeof rem === "boolean") setEventReminders(rem);
-      if (typeof com === "boolean") setCommunityUpdates(com);
-      if (typeof cp === "boolean") setCommunicationPrefs(cp);
+      if (isMounted.current) {
+        if (lang) setLanguage(lang);
+        if (typeof rem === "boolean") setEventReminders(rem);
+        if (typeof com === "boolean") setCommunityUpdates(com);
+        if (typeof cp === "boolean") setCommunicationPrefs(cp);
+      }
     })();
   }, []);
 

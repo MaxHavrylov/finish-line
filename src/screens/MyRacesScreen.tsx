@@ -199,22 +199,34 @@ export default function MyRacesScreen() {
 
     if (totalSeconds <= 0) return;
 
-    setSaving(true);
+    if (isMounted.current) {
+      setSaving(true);
+    }
+    
     try {
       await userRacesRepo.addResult(selectedRace.id, totalSeconds);
       
       // Track successful result addition
       trackResultAdded(selectedRace.eventId, totalSeconds, selectedRace.minDistanceLabel);
       
+      if (!isMounted.current) {
+        console.log('[fx] unmounted, abort setState');
+        return;
+      }
+      
       setResultModalVisible(false);
       await loadData(); // Reload to update the lists
     } catch (error) {
       console.warn('Failed to save result:', error);
-      showError('Failed to save your result');
+      if (isMounted.current) {
+        showError('Failed to save your result');
+      }
     } finally {
-      setSaving(false);
+      if (isMounted.current) {
+        setSaving(false);
+      }
     }
-  }, [selectedRace, resultHours, resultMinutes, resultSeconds, loadData]);
+  }, [selectedRace, resultHours, resultMinutes, resultSeconds, loadData, showError]);
 
   // Comparison functions
   const loadFriendsResults = useCallback(async (eventId: string) => {

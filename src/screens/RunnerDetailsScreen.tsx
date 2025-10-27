@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
 import {
   Text,
@@ -73,13 +73,22 @@ export default function RunnerDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('future');
+  
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const loadRunnerDetails = async () => {
       try {
         // Find runner in mock data
         const foundRunner = mockRunners.find(r => r.id === runnerId);
-        if (foundRunner) {
+        if (foundRunner && isMounted.current) {
           setRunner(foundRunner);
           
           // Generate mock events
@@ -87,12 +96,16 @@ export default function RunnerDetailsScreen() {
           
           // Check if following
           const following = await followsRepo.isFollowing('me', runnerId);
-          setIsFollowing(following);
+          if (isMounted.current) {
+            setIsFollowing(following);
+          }
         }
       } catch (error) {
         console.error('Error loading runner details:', error);
       } finally {
-        setLoading(false);
+        if (isMounted.current) {
+          setLoading(false);
+        }
       }
     };
     
@@ -124,18 +137,26 @@ export default function RunnerDetailsScreen() {
   const handleFollowToggle = useCallback(async () => {
     if (!runner) return;
     
-    setFollowLoading(true);
+    if (isMounted.current) {
+      setFollowLoading(true);
+    }
+    
     try {
       if (isFollowing) {
         await followsRepo.unfollow('me', runnerId);
       } else {
         await followsRepo.follow('me', runnerId);
       }
-      setIsFollowing(!isFollowing);
+      
+      if (isMounted.current) {
+        setIsFollowing(!isFollowing);
+      }
     } catch (error) {
       console.error('Error toggling follow status:', error);
     } finally {
-      setFollowLoading(false);
+      if (isMounted.current) {
+        setFollowLoading(false);
+      }
     }
   }, [isFollowing, runnerId, runner]);
 

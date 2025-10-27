@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { 
   Text, 
@@ -25,19 +25,34 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const loadNotifications = useCallback(async () => {
     try {
       const data = await notificationsRepo.listAll();
-      setNotifications(data);
+      if (isMounted.current) {
+        setNotifications(data);
+      }
     } catch (error) {
       console.warn('Failed to load notifications:', error);
-      showError('Failed to load notifications');
+      if (isMounted.current) {
+        showError('Failed to load notifications');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (isMounted.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, []);
+  }, [showError]);
 
   // Load notifications when screen focuses
   useFocusEffect(
@@ -47,16 +62,20 @@ export default function NotificationsScreen() {
   );
 
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
+    if (isMounted.current) {
+      setRefreshing(true);
+    }
     loadNotifications();
   }, [loadNotifications]);
 
   const handleMarkRead = useCallback(async (id: string) => {
     try {
       await notificationsRepo.markRead(id);
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
+      if (isMounted.current) {
+        setNotifications(prev => 
+          prev.map(n => n.id === id ? { ...n, read: true } : n)
+        );
+      }
     } catch (error) {
       console.warn('Failed to mark notification as read:', error);
     }
@@ -65,9 +84,11 @@ export default function NotificationsScreen() {
   const handleMarkAllRead = useCallback(async () => {
     try {
       await notificationsRepo.markAllRead();
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
+      if (isMounted.current) {
+        setNotifications(prev => 
+          prev.map(n => ({ ...n, read: true }))
+        );
+      }
     } catch (error) {
       console.warn('Failed to mark all notifications as read:', error);
     }

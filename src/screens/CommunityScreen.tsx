@@ -100,6 +100,15 @@ export default function CommunityScreen() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const isMounted = useRef(true);
+
+  React.useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Available locations for filtering
   const locations = useMemo(() => {
@@ -127,11 +136,16 @@ export default function CommunityScreen() {
 
   const handleEndReached = useCallback(() => {
     if (paginatedRunners.length < filteredRunners.length) {
-      setIsLoading(true);
+      if (isMounted.current) {
+        setIsLoading(true);
+      }
+      
       // Simulate network delay
       setTimeout(() => {
-        setPage(prev => prev + 1);
-        setIsLoading(false);
+        if (isMounted.current) {
+          setPage(prev => prev + 1);
+          setIsLoading(false);
+        }
       }, 500);
     }
   }, [paginatedRunners.length, filteredRunners.length]);
@@ -139,19 +153,26 @@ export default function CommunityScreen() {
   const onRefresh = useCallback(async () => {
     if (refreshing) return; // Guard against concurrent requests
     
-    setRefreshing(true);
+    if (isMounted.current) {
+      setRefreshing(true);
+    }
+    
     try {
       console.log('[CommunityScreen] Refreshing data...');
       // Reset to first page and clear any loading states
-      setPage(1);
-      setIsLoading(false);
+      if (isMounted.current) {
+        setPage(1);
+        setIsLoading(false);
+      }
       
       // Simulate network delay for refresh
       await new Promise<void>(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.warn('[CommunityScreen] Error during refresh:', error);
     } finally {
-      setRefreshing(false);
+      if (isMounted.current) {
+        setRefreshing(false);
+      }
     }
   }, [refreshing]);
 
