@@ -4,6 +4,8 @@
     "slug": "finish-line",
     "scheme": "finishline",
     "version": "1.0.0",
+    "description": "Find, plan, and track your races. Discover providers, follow friends, and never miss a start.",
+    "primaryColor": "#4CAF50",
     "orientation": "portrait",
     "platforms": ["ios", "android", "web"],
     "icon": "./assets/icon.png",
@@ -17,13 +19,15 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"
