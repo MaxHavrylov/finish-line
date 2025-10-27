@@ -43,9 +43,17 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const [manageModalVisible, setManageModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const mounted = useRef(true);
+  const loadInFlight = useRef(false);
 
   // Animation state
   const heartScale = useRef(new Animated.Value(1)).current;
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // My race state
   const [raceRecord, setRaceRecord] = useState<{ id: string; status: UserRaceStatus } | null>(null);
@@ -64,7 +72,12 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   });
 
   useEffect(() => {
-    mounted.current = true;
+    if (loadInFlight.current) {
+      console.log('[net] ignored duplicate load');
+      return;
+    }
+
+    loadInFlight.current = true;
     (async () => {
       try {
         console.log('[EventDetails] Loading event:', event.id);
@@ -87,34 +100,38 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         
         console.log('[EventDetails] All calls completed, setting state...');
         
-        if (mounted.current) {
-          if (d) {
-            setDetails(d);
-            console.log('[EventDetails] Details set successfully');
-          } else {
-            console.warn('[EventDetails] No details found for event:', event.id);
-          }
-          setFav(f);
-          setRaceRecord(r);
-          setProvider(p);
-          
-          // Check follow status if provider exists
-          if (p) {
-            try {
-              const following = await providersRepo.isFollowing('me', p.id);
-              if (mounted.current) setIsFollowingProvider(following);
-            } catch (error) {
-              console.warn('Failed to check follow status:', error);
-            }
-          }
-          
-          console.log('[EventDetails] State update completed');
+        if (!mounted.current) {
+          console.log('[fx] unmounted, abort setState');
+          return;
         }
+        
+        if (d) {
+          setDetails(d);
+          console.log('[EventDetails] Details set successfully');
+        } else {
+          console.warn('[EventDetails] No details found for event:', event.id);
+        }
+        setFav(f);
+        setRaceRecord(r);
+        setProvider(p);
+        
+        // Check follow status if provider exists
+        if (p) {
+          try {
+            const following = await providersRepo.isFollowing('me', p.id);
+            if (mounted.current) setIsFollowingProvider(following);
+          } catch (error) {
+            console.warn('Failed to check follow status:', error);
+          }
+        }
+        
+        console.log('[EventDetails] State update completed');
       } catch (error) {
         console.error('[EventDetails] Error in useEffect:', error);
+      } finally {
+        loadInFlight.current = false;
       }
     })();
-    return () => { mounted.current = false; };
   }, [event.id]);
 
   const onToggleFav = useCallback(async () => {

@@ -159,6 +159,12 @@ export default function DiscoverScreen() {
   const { t } = useTranslation();
   const { showError } = useSnackbar();
 
+  // Race condition prevention
+  const isMounted = useRef(true);
+  const loadInFlight = useRef(false);
+  const refreshInFlight = useRef(false);
+  const filtersDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showToTop, setShowToTop] = useState(false);
@@ -177,6 +183,17 @@ export default function DiscoverScreen() {
 
   // favorites state (persisted ids)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      if (filtersDebounceRef.current) {
+        clearTimeout(filtersDebounceRef.current);
+        filtersDebounceRef.current = null;
+      }
+    };
+  }, []);
 
   // ---- filter modals
   const [typeOpen, setTypeOpen] = useState(false);
@@ -206,29 +223,57 @@ export default function DiscoverScreen() {
   }, []);
 
   const load = useCallback(async () => {
+    if (loadInFlight.current) {
+      console.log('[net] ignored duplicate load');
+      return;
+    }
+    
+    loadInFlight.current = true;
     try {
       // Try the new listSummaries function which has fallback logic
       const data = await listSummaries();
+      if (!isMounted.current) {
+        console.log('[fx] unmounted, abort setState');
+        return;
+      }
       console.log('[DiscoverScreen] Loaded events:', data.length);
       setEvents(data);
     } catch (error) {
       console.warn('[DiscoverScreen] Error loading events:', error);
-      showError('Failed to load events');
+      if (isMounted.current) {
+        showError('Failed to load events');
+      }
       // Fallback to getEvents if listSummaries fails
       try {
         const data = await getEvents();
+        if (!isMounted.current) {
+          console.log('[fx] unmounted, abort setState');
+          return;
+        }
         console.log('[DiscoverScreen] Fallback loaded events:', data.length);
         setEvents(data);
       } catch (fallbackError) {
         console.warn('[DiscoverScreen] Fallback also failed:', fallbackError);
-        showError('Unable to load events. Please check your connection.');
+        if (isMounted.current) {
+          showError('Unable to load events. Please check your connection.');
+        }
       }
+    } finally {
+      loadInFlight.current = false;
     }
-  }, []);
+  }, [showError]);
 
   const loadFavorites = useCallback(async () => {
-    const ids = await listFavoriteIds();
-    setFavoriteIds(ids);
+    try {
+      const ids = await listFavoriteIds();
+      if (!isMounted.current) {
+        console.log('[fx] unmounted, abort setState');
+        return;
+      }
+      setFavoriteIds(ids);
+    } catch (error) {
+      console.warn('[DiscoverScreen] Error loading favorites:', error);
+    }
   }, []);
 
   // Filter persistence
@@ -279,13 +324,15 @@ export default function DiscoverScreen() {
         
         // Load view preference
         const savedView = await AsyncStorage.getItem('discoverViewMode');
-        if (savedView === 'map') {
+        if (isMounted.current && savedView === 'map') {
           setIsMapView(true);
         }
       } catch (error) {
         console.warn('[DiscoverScreen] Error during initial load:', error);
       } finally {
-        setLoading(false);
+        if (isMounted.current) {
+          setLoading(false);
+        }
       }
     })();
   }, [load, loadFavorites, loadSavedFilters]);
@@ -297,9 +344,11 @@ export default function DiscoverScreen() {
       (async () => {
         try {
           const ids = await listFavoriteIds();
-          if (isActive) setFavoriteIds(ids);
+          if (isActive && isMounted.current) {
+            setFavoriteIds(ids);
+          }
         } catch (e) {
-          // Optionally log error
+          console.warn('[DiscoverScreen] Error refreshing favorites on focus:', e);
         }
       })();
       return () => {
@@ -308,15 +357,34 @@ export default function DiscoverScreen() {
     }, [])
   );
 
-  // Save filters whenever they change (after initial load)
+  // Save filters whenever they change (after initial load) - debounced
   useEffect(() => {
     if (!loading) {
-      saveCurrentFilters();
+      // Clear existing timeout
+      if (filtersDebounceRef.current) {
+        clearTimeout(filtersDebounceRef.current);
+      }
+      
+      // Debounce filter saves to prevent rapid refetch storms
+      filtersDebounceRef.current = setTimeout(() => {
+        if (isMounted.current) {
+          saveCurrentFilters();
+        }
+      }, 300);
     }
   }, [selectedCategories, dateFilter, locationText, selectedDistances, onlyFavorites, loading, saveCurrentFilters]);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
+    if (refreshInFlight.current) {
+      console.log('[net] ignored duplicate refresh');
+      return;
+    }
+
+    refreshInFlight.current = true;
+    if (isMounted.current) {
+      setRefreshing(true);
+    }
+    
     try {
       console.log('[DiscoverScreen] Refreshing data...');
       await syncEvents();
@@ -324,11 +392,16 @@ export default function DiscoverScreen() {
       await loadFavorites();
     } catch (error) {
       console.warn('[DiscoverScreen] Error during refresh:', error);
-      showError('Failed to refresh data');
+      if (isMounted.current) {
+        showError('Failed to refresh data');
+      }
     } finally {
-      setRefreshing(false);
+      refreshInFlight.current = false;
+      if (isMounted.current) {
+        setRefreshing(false);
+      }
     }
-  }, [load, loadFavorites]);
+  }, [load, loadFavorites, showError]);
 
   // helper for distance matching
   const matchesAnySelectedDistance = (label?: string): boolean => {

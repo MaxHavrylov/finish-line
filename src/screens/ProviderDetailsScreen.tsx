@@ -48,6 +48,11 @@ export default function ProviderDetailsScreen() {
   const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
+
+  // Race condition prevention
+  const isMounted = useRef(true);
+  const loadInFlight = useRef(false);
+  const filtersDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { providerId } = route.params as ProviderDetailsParams;
   
   const [providerData, setProviderData] = useState<ProviderWithEvents | null>(null);
@@ -66,10 +71,23 @@ export default function ProviderDetailsScreen() {
   const [dateWindow, setDateWindow] = useState<DateWindow>('ANY');
   const [sortOption, setSortOption] = useState<SortOption>('SOONEST');
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      if (filtersDebounceRef.current) {
+        clearTimeout(filtersDebounceRef.current);
+        filtersDebounceRef.current = null;
+      }
+    };
+  }, []);
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchText);
+      if (isMounted.current) {
+        setDebouncedSearch(searchText);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [searchText]);

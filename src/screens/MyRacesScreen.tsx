@@ -26,6 +26,12 @@ export default function MyRacesScreen() {
   const { width } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const { showError, showSuccess } = useSnackbar();
+  
+  // Race condition prevention
+  const isMounted = useRef(true);
+  const loadInFlight = useRef(false);
+  const refreshInFlight = useRef(false);
+  
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
   
   // Data states
@@ -63,6 +69,13 @@ export default function MyRacesScreen() {
   // Ref for FlatList scroll control
   const listRef = useRef<FlatList>(null);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Handle modal back close for result modal
   useModalBackClose({
     isVisible: resultModalVisible,
@@ -80,22 +93,40 @@ export default function MyRacesScreen() {
 
   // Load data
   const loadData = useCallback(async () => {
+    if (loadInFlight.current) {
+      console.log('[net] ignored duplicate load');
+      return;
+    }
+
+    loadInFlight.current = true;
     try {
-      setLoading(true);
+      if (isMounted.current) {
+        setLoading(true);
+      }
       const [future, past] = await Promise.all([
         userRacesRepo.listFuture(),
         userRacesRepo.listPastWithMeta()
       ]);
 
+      if (!isMounted.current) {
+        console.log('[fx] unmounted, abort setState');
+        return;
+      }
+
       setFutureRaces(future);
       setPastRaces(past);
     } catch (error) {
       console.warn('Failed to load races:', error);
-      showError('Failed to load your races');
+      if (isMounted.current) {
+        showError('Failed to load your races');
+      }
     } finally {
-      setLoading(false);
+      loadInFlight.current = false;
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     loadData();
@@ -103,9 +134,16 @@ export default function MyRacesScreen() {
 
   // Refresh handler
   const onRefresh = useCallback(async () => {
-    if (refreshing) return; // Guard against concurrent requests
+    if (refreshInFlight.current) {
+      console.log('[net] ignored duplicate refresh');
+      return;
+    }
+
+    refreshInFlight.current = true;
+    if (isMounted.current) {
+      setRefreshing(true);
+    }
     
-    setRefreshing(true);
     try {
       console.log('[MyRacesScreen] Refreshing data...');
       const [future, past] = await Promise.all([
@@ -113,14 +151,22 @@ export default function MyRacesScreen() {
         userRacesRepo.listPastWithMeta()
       ]);
       
+      if (!isMounted.current) {
+        console.log('[fx] unmounted, abort setState');
+        return;
+      }
+      
       setFutureRaces(future);
       setPastRaces(past);
     } catch (error) {
       console.warn('[MyRacesScreen] Error during refresh:', error);
     } finally {
-      setRefreshing(false);
+      refreshInFlight.current = false;
+      if (isMounted.current) {
+        setRefreshing(false);
+      }
     }
-  }, [refreshing]);
+  }, []);
 
   // Reload data when screen comes into focus
   useFocusEffect(
