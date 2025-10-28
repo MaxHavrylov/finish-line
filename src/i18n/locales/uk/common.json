@@ -91,6 +91,9 @@
   "noNotifications": "Сповіщень поки немає",
   "registerNow": "Зареєструватися",
   "offlineNotice": "Немає підключення до інтернету",
+  "eventsFound_0": "Подій не знайдено",
+  "eventsFound_1": "Знайдено {{count}} подію",
+  "eventsFound_other": "Знайдено {{count}} подій",
   "notif": {
     "followProviderTitle": "Ви підписались на {{provider}}",
     "followProviderBody": "Ви будете отримувати оновлення про їхні події"

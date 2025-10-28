@@ -96,6 +96,9 @@
   "noNotifications": "Zatím žádná oznámení",
   "registerNow": "Registrovat",
   "offlineNotice": "Bez připojení k internetu",
+  "eventsFound_0": "Žádné závody",
+  "eventsFound_1": "{{count}} závod",
+  "eventsFound_other": "{{count}} závodů",
   "notif": {
     "followProviderTitle": "Sledujete {{provider}}",
     "followProviderBody": "Budete dostávat aktualizace o jejich událostech"

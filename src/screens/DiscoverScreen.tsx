@@ -603,7 +603,7 @@ export default function DiscoverScreen() {
 
           {filtered.length > 0 && (
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 8 }}>
-              {filtered.length} {filtered.length === 1 ? t('eventFound') : t('eventsFound')}
+              {t('eventsFound', { count: filtered.length })}
             </Text>
           )}
         </View>

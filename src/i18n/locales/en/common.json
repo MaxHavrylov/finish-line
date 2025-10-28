@@ -91,6 +91,9 @@
   "noNotifications": "No notifications yet",
   "registerNow": "Register Now",
   "offlineNotice": "No internet connection",
+  "eventsFound_0": "No events found",
+  "eventsFound_1": "{{count}} event found",
+  "eventsFound_other": "{{count}} events found",
   "notif": {
     "followProviderTitle": "Following {{provider}}",
     "followProviderBody": "You will receive updates about their events"
